@@ -4,6 +4,7 @@ import pandas as pd
 import random
 from sklearn.model_selection import train_test_split
 
+
 def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .75) \
         -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
     """
@@ -44,8 +45,26 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
     # test_X = X.iloc[test_index]
     # test_Y = y.iloc[test_index]
 
-    train_X, test_X, train_y, test_Y  = train_test_split(X, y, test_size=train_proportion, random_state=0)
-    return train_X, train_y, test_X, test_Y
+    # indexes = np.random.choice(range(X.shape[0]), int(train_proportion * X.shape[0]))
+    # train_X = X.iloc[indexes]
+    # train_y = y.iloc[indexes]
+    # test_X = X[~X.index.isin(train_X.index)]
+    # test_y = y[~train_y.index]
+    # arr_rand = np.random.rand(X.shape[0])
+    # split = arr_rand < np.percentile(arr_rand, train_proportion)
+    # train_X = X[~split]
+    # train_y = y[~split]
+    # test_X = X[split]
+    # test_y = y[split]
+    y = X.reindex_like(X)
+    train_X = X.sample(frac=train_proportion)
+    train_y = y[y.index.isin(train_X.index)]
+    test_X = X[~X.index.isin(train_X.index)]
+    test_y = y[~y.index.isin(train_y.index)]
+    return train_X, train_y, test_X, test_y
+
+    # train_X, test_X, train_y, test_Y  = train_test_split(X, y, test_size=train_proportion, random_state=0)
+    # return train_X, train_y, test_X, test_Y
 
 
 def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:
