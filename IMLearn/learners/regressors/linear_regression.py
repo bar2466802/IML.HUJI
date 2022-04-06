@@ -1,3 +1,10 @@
+#################################################################
+# FILE : linear_regression.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
+# DESCRIPTION: Implement linear regression model
+#################################################################
+
 from __future__ import annotations
 from typing import NoReturn
 from ...base import BaseEstimator
@@ -63,10 +70,6 @@ class LinearRegression(BaseEstimator):
             np.insert(x_arr, 0, new_column, axis=1)
         moore_penrose_pseudo_inv = np.linalg.pinv(x_arr)
         self.coefs_ = moore_penrose_pseudo_inv.dot(y)
-
-        # from sklearn.linear_model import LinearRegression
-        # reg = LinearRegression().fit(X, y)
-        # score = reg.score(X, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """

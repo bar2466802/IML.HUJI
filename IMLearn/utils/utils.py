@@ -1,3 +1,10 @@
+#################################################################
+# FILE : utils.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
+# DESCRIPTION: utils for IML classes - implement split_train_test for models
+#################################################################
+
 from typing import Tuple
 import numpy as np
 import pandas as pd
@@ -35,36 +42,17 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         Responses of test samples
 
     """
-    # index_list = list(range(len(X)))
-    # random.shuffle(index_list)
-    # slice_index = int(len(X) * train_proportion)
-    # train_index = index_list[:slice_index]
-    # test_index = index_list[slice_index:]
-    # train_X = X.iloc[train_index]
-    # train_y = y.iloc[train_index]
-    # test_X = X.iloc[test_index]
-    # test_Y = y.iloc[test_index]
-
-    # indexes = np.random.choice(range(X.shape[0]), int(train_proportion * X.shape[0]))
-    # train_X = X.iloc[indexes]
-    # train_y = y.iloc[indexes]
-    # test_X = X[~X.index.isin(train_X.index)]
-    # test_y = y[~train_y.index]
-    # arr_rand = np.random.rand(X.shape[0])
-    # split = arr_rand < np.percentile(arr_rand, train_proportion)
-    # train_X = X[~split]
-    # train_y = y[~split]
-    # test_X = X[split]
-    # test_y = y[split]
-    y = X.reindex_like(X)
-    train_X = X.sample(frac=train_proportion)
-    train_y = y[y.index.isin(train_X.index)]
-    test_X = X[~X.index.isin(train_X.index)]
-    test_y = y[~y.index.isin(train_y.index)]
-    return train_X, train_y, test_X, test_y
+    # Shuffle your dataset
+    shuffle_df = X.sample(frac=1)
+    y = y.reindex_like(shuffle_df)
+    train_size = int(len(shuffle_df) * train_proportion)
+    train_X = shuffle_df[:train_size]
+    train_y = y[:train_size]
+    test_X = shuffle_df[train_size:]
+    test_Y = y[train_size:]
 
     # train_X, test_X, train_y, test_Y  = train_test_split(X, y, test_size=train_proportion, random_state=0)
-    # return train_X, train_y, test_X, test_Y
+    return train_X, train_y, test_X, test_Y
 
 
 def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:

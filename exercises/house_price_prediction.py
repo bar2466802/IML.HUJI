@@ -1,19 +1,20 @@
+#################################################################
+# FILE : house_price_prediction.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
+# DESCRIPTION: Testing linear_regression class - predict prices of houses.
+#################################################################
+
 from turtledemo.__main__ import font_sizes
 
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
-import IMLearn.utils.utils as utils
 from typing import NoReturn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-
 import plotly.graph_objects as go
-import plotly.express as px
 import plotly.io as pio
-
-from utils import animation_to_gif
 
 pio.templates.default = "simple_white"
 
@@ -59,8 +60,6 @@ def preprocess_data(data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
     data = pd.get_dummies(data, columns=['year_sold'])
     fields_to_drop = ["id", "date", "long", "lat", "yr_renovated"]
     data = data.drop(columns=fields_to_drop)
-    # for field in fields_to_drop:
-    #     data = data.drop([field], axis=1)
 
     # Check all range properties are within their value ranges
     data = data[data['view'].isin(np.arange(0, 5, 1))]
@@ -111,10 +110,9 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         plt.xlabel("Feature: " + feature)
         plt.ylabel("Response")
         plt.scatter(feature_data, y, color="green")
-        # plt.tight_layout()
         plt.show()
         plot_name = output_path + "corr_btw_response_and_" + feature + ".png"
-        # plt.savefig(plot_name)
+        plt.savefig(plot_name)
         plt.clf()
         plt.cla()
 
@@ -132,18 +130,21 @@ if __name__ == '__main__':
 
     # Question 2 - Feature evaluation with respect to response
     plots_path = "../exercises/"
-    # feature_evaluation(X, y, plots_path)
+    feature_evaluation(X, y, plots_path)
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(X, y)
 
     # Question 4 - Fit model over increasing percentages of the overall training data
-    # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
-    #   1) Sample p% of the overall training data
-    #   2) Fit linear model (including intercept) over sampled set
-    #   3) Test fitted model over test set
-    #   4) Store average and variance of loss over test set
-    # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
+    """
+    For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
+      1) Sample p% of the overall training data
+      2) Fit linear model (including intercept) over sampled set
+      3) Test fitted model over test set
+      4) Store average and variance of loss over test set
+    Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
+    """
+
     percentages = np.arange(10, 101, 1)
     loss_list = []
     for percentage in (percentages.repeat(10) / 100):
@@ -176,39 +177,6 @@ if __name__ == '__main__':
         yaxis={"title": "average loss"})
 
     fig = go.Figure(data=data_for_fig, layout=layout)
-
     fig.show()
 
-    # frames = []
-    # for i in range(10):
-    #     frames.append(go.Frame(
-    #         data=[
-    #             go.Scatter(x=mean_pred, y=plot_data['test_size'], mode="markers+lines", name="Predicted Points",
-    #                        marker=dict(color="blue", opacity=.7))]))
-    #
-    # for i in range(len(frames)):
-    #     frames[i]["data"] = (go.Scatter(x=plot_data['test_size'], y=mean_pred, mode="markers+lines",
-    #                                     name="Mean Prediction",
-    #                                     line=dict(dash="dash"), marker=dict(color="green", opacity=.7)),
-    #                          go.Scatter(x=plot_data['test_size'], y=mean_pred - 2 * var_pred, fill=None,
-    #                                     mode="lines",
-    #                                     line=dict(color="lightgrey"), showlegend=False),
-    #                          go.Scatter(x=plot_data['test_size'], y=mean_pred + 2 * var_pred, fill='tonexty',
-    #                                     mode="lines",
-    #                                     line=dict(color="lightgrey"), showlegend=False),) + frames[i]["data"]
-    #
-    # fig = go.Figure(data=frames[0]["data"],
-    #                 frames=frames[1:],
-    #                 layout=go.Layout(
-    #                     title=dict(text="Scatterplot of average loss as function of training size"),
-    #                     xaxis=dict(title="percentage training size"),
-    #                     yaxis=dict(title="average loss"),
-    #                     updatemenus=[dict(visible=True,
-    #                                       type="buttons",
-    #                                       buttons=[dict(label="Play",
-    #                                                     method="animate",
-    #                                                     args=[None, dict(frame={"duration": 1000})])])]))
-    # # animation_to_gif(fig, f"../ex2_q4.gif", 1000)
-    # fig.show()
-
-    print("The end!")
+    print("The end house price prediction!")

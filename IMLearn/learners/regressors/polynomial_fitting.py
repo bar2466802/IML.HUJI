@@ -1,8 +1,17 @@
+#################################################################
+# FILE : polynomial_fitting.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
+# DESCRIPTION: Implement polynomial fitting model
+#################################################################
+
 from __future__ import annotations
 from typing import NoReturn
 from . import LinearRegression
 from ...base import BaseEstimator
 import numpy as np
+
+from ...metrics import mean_square_error
 
 
 class PolynomialFitting(BaseEstimator):
@@ -19,7 +28,8 @@ class PolynomialFitting(BaseEstimator):
             Degree of polynomial to fit
         """
         super().__init__()
-        raise NotImplementedError()
+        self.degree_ = k
+        self.linearRegModel_ = LinearRegression(include_intercept=True)
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -33,7 +43,8 @@ class PolynomialFitting(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        matrix_vander = self.__transform(X)
+        self.linearRegModel_.fit(matrix_vander, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -49,7 +60,8 @@ class PolynomialFitting(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        matrix_vander = self.__transform(X)
+        return self.linearRegModel_.predict(matrix_vander)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -68,7 +80,7 @@ class PolynomialFitting(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        raise NotImplementedError()
+        return mean_square_error(y, self.predict(X))
 
     def __transform(self, X: np.ndarray) -> np.ndarray:
         """
@@ -83,4 +95,4 @@ class PolynomialFitting(BaseEstimator):
         transformed: ndarray of shape (n_samples, k+1)
             Vandermonde matrix of given samples up to degree k
         """
-        raise NotImplementedError()
+        return np.vander(X, self.degree_ + 1)

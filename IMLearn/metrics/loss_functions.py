@@ -1,3 +1,10 @@
+#################################################################
+# FILE : loss_functions.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
+# DESCRIPTION: Implement MSE function for models
+#################################################################
+
 import numpy as np
 
 
@@ -16,7 +23,7 @@ def mean_square_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     -------
     MSE of given predictions
     """
-    return np.float(np.mean(np.power(y_true - y_pred, 2), axis=None))
+    return np.float(np.mean(np.power((y_true - y_pred), 2)))
 
 
 def misclassification_error(y_true: np.ndarray, y_pred: np.ndarray, normalize: bool = True) -> float:
