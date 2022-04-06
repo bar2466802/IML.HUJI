@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     # Group by country
     df_group_by_country = city_temps_df.groupby(['Country'])
-    countries = np.array(list(df_group_by_country.groups.keys())) # get all the countries keys for plot
+    countries = np.array(list(df_group_by_country.groups.keys()))  # get all the countries keys for plot
     loss_list = []
     # Loop on each country's data and predict based on the model fitted to Israel only
     for country_key, country_df in df_group_by_country:

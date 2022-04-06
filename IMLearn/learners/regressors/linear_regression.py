@@ -69,7 +69,7 @@ class LinearRegression(BaseEstimator):
             new_column = np.full(x_arr.shape[0], 1)
             np.insert(x_arr, 0, new_column, axis=1)
         moore_penrose_pseudo_inv = np.linalg.pinv(x_arr)
-        self.coefs_ = moore_penrose_pseudo_inv.dot(y)
+        self.coefs_ = moore_penrose_pseudo_inv @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
