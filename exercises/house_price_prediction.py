@@ -153,7 +153,9 @@ def plot_corr_of_feature_and_response(feature: str, feature_data: pd.Series, pea
     plt.ylabel("Response")
     plt.scatter(feature_data, y, color="green")
     plt.show()
-    plot_name = output_path + "corr_btw_response_and_" + feature + ".png"
+    plot_name = "corr_btw_response_and_" + feature + ".png"
+    if output_path != ".":
+        plot_name = output_path + plot_name
     plt.savefig(plot_name)
     plt.clf()
     plt.cla()
@@ -166,8 +168,8 @@ if __name__ == '__main__':
     X, y = load_data(filename)
 
     # Question 2 - Feature evaluation with respect to response
-    plots_path = "../exercises/"
-    feature_evaluation(X, y, plots_path)
+    # plots_path = "../exercises/"
+    feature_evaluation(X, y)  # default is current path
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(X, y)
