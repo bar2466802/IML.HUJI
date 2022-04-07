@@ -65,11 +65,23 @@ def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def quiz_q_2():
+    from IMLearn.metrics import mean_square_error
+    y_true = np.array([279000, 432000, 326000, 333000, 437400, 555950])
+    y_pred = np.array(
+        [199000.37562541, 452589.25533196, 345267.48129011, 345856.57131275, 563867.1347574, 395102.94362135])
+    loss = mean_square_error(y_true, y_pred)
+    form = "{:.3f}"
+    print(str(form.format(loss)))
+
+
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of city temperature dataset
     filename = "../datasets/City_Temperature.csv"
     city_temps_df = load_data(filename)
+
+    quiz_q_2()
 
     # Question 2 - Exploring data for specific country
     israel_temps_df = city_temps_df[city_temps_df['Country'] == 'Israel']
@@ -82,6 +94,7 @@ if __name__ == '__main__':
     q2_df = israel_temps_df.astype({"Year": str})
     fig = px.scatter(q2_df, x="DayOfYear", y="Temp", color="Year", title=q2_1_title)
     fig.show()
+    # fig.write_image("ex2_part2_q2_1.png")
 
     """"
     Group the samples by `Month` and plot a bar plot showing for each month the standard deviation of the daily
@@ -97,6 +110,7 @@ if __name__ == '__main__':
     plt.ylabel("standard deviation of the daily temperature")
     plt.title(q2_2_title)
     plt.tight_layout()
+    # plt.savefig("ex2_part2_q2_2.png")
     plt.show()
 
     # Question 3 - Exploring differences between countries
@@ -110,6 +124,7 @@ if __name__ == '__main__':
     df_q3 = df_group_by_country_month.agg({'Temp': ['mean', 'std']})
     df_q3 = df_q3.xs('Temp', axis=1, drop_level=True).reset_index()
     fig = px.line(df_q3, x="Month", y="mean", error_y="std", color="Country", title=q2_3_title)
+    # fig.write_image("ex2_part2_q3.png")
     fig.show()
 
     # Question 4 - Fitting model for different values of `k`
@@ -141,14 +156,15 @@ if __name__ == '__main__':
     plt.ylabel("Loss")
     plt.title(q2_4_title)
     plt.tight_layout()
+    # plt.savefig("ex2_part2_q4.png")
     plt.show()
     # Question 5 - Evaluating fitted model on different countries
     """
     Fit a model over the entire subset of records from Israel using the k chosen above. Plot a bar
     plot showing the model’s error over each of the other countries.
     """
-    # Fit a model over the entire subset of records from Israel using the k = 4
-    poly_model = PolynomialFitting(k=4)
+    # Fit a model over the entire subset of records from Israel using the k = 5
+    poly_model = PolynomialFitting(k=5)
     poly_model.fit(israel_temps_df['DayOfYear'].to_numpy(), israel_temps_df['Temp'].to_numpy())
 
     # Group by country
@@ -161,12 +177,13 @@ if __name__ == '__main__':
         loss_list.append(loss)
 
     loss_arr = np.array(loss_list)
-    q2_5_title = "Bar plot showing the model’s error over each of the other countries for k = 4"
+    q2_5_title = "Bar plot showing the model’s error foreach of the other countries, k = 5"
     plt.bar(countries, loss_arr, color='red')
     plt.xlabel("Country")
     plt.ylabel("Loss")
-    plt.title(q2_4_title)
-    plt.tight_layout()
+    plt.title(q2_5_title)
+    # plt.tight_layout()
+    # plt.savefig("ex2_part2_q5.png")
     plt.show()
 
     print("The end city temperature prediction!")

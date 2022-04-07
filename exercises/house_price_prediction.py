@@ -152,11 +152,11 @@ def plot_corr_of_feature_and_response(feature: str, feature_data: pd.Series, pea
     plt.xlabel("Feature: " + feature)
     plt.ylabel("Response")
     plt.scatter(feature_data, y, color="green")
-    plt.show()
     plot_name = "corr_btw_response_and_" + feature + ".png"
     if output_path != ".":
         plot_name = output_path + plot_name
     plt.savefig(plot_name)
+    plt.show()
     plt.clf()
     plt.cla()
 
