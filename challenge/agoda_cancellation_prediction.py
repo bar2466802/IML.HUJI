@@ -75,6 +75,7 @@ def load_data(filename: str, test_train):
 
     for field in dates_fields_to_format:
         format_datetime_to_date(data, field)
+    format_cancellation_code(data)
     if test_train == 'train':
         data["cancellation_datetime"] = np.where(data["cancellation_datetime"].isna(), 0, 1)
         data_after_filtration = refactor_by_challenge_request(data, 'checkout_date', 'booking_datetime',
@@ -93,6 +94,30 @@ def load_data(filename: str, test_train):
         # data = data_after_filtration[data['checkout_date'] >= test_cancellation[0]]
         # data.to_csv("Test data.csv", encoding='utf-8')
         return data[filter_list]
+
+
+def format_cancellation_code(df: pd.DataFrame) -> NoReturn:
+    """
+        format the cancellation code for future processing
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Data frame to preprocess
+        """
+    df['number_of_days'] = (df['checkout_date'] - df['checkin_date']).dt.days
+    df['number_of_cancellation_periods'] = df['cancellation_policy_code'].str.count("D")
+    df = df.join(df['cancellation_policy_code'].str.split('_', expand=True).add_prefix('cancellation_code'))
+    filter_col = [col for col in df if col.startswith('cancellation_code')]
+
+    for col, col_data in df[filter_col].iteritems():
+        # df = df.join(df[col].str.split('D', expand=True).add_prefix(col + "_"))
+
+        if df[col].str.split('D', expand=True).shape[1] == 2:
+            df[[col + "_days", col + "_penalty"]] = df[col].str.split('D', expand=True)
+        # data = np.where(df[col].str.contains("D"),
+        #                 df.join(df[col].str.split('D', expand=True).add_prefix(col)), 0)
+
+    print(df)
 
 
 def format_datetime_to_date(df: pd.DataFrame, field: str) -> NoReturn:
