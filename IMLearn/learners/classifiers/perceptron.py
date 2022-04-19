@@ -1,3 +1,10 @@
+#################################################################
+# FILE : perceptron.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 3
+# DESCRIPTION: Perceptron class - fit a halfspace classifier according to the algorithm's pseudocode as seen in class
+#################################################################
+
 from __future__ import annotations
 from typing import Callable
 from typing import NoReturn
@@ -31,6 +38,7 @@ class Perceptron(BaseEstimator):
             A callable to be called after each update of the model while fitting to given data
             Callable function should receive as input a Perceptron instance, current sample and current response
     """
+
     def __init__(self,
                  include_intercept: bool = True,
                  max_iter: int = 1000,
@@ -73,7 +81,26 @@ class Perceptron(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
+
+        self.coefs_ = np.empty(X.shape[1], dtype=float)
+        # From Gilad's post in the forum:
+        # "You can therefore change `fitted_` to `True` in the `Perceptron.fit` after changing w for the first time"
+        self.fitted_ = True
+        diff = y * np.sign(X @ self.coefs_)
+        index = 0
+
+        # Iterate over given data as long as that did not reach `self.max_iter_`
+        # and as long as there exists a sample misclassified
+        while index in range(self.max_iter_) and (diff <= 0).any():
+            nonzero = np.where(diff <= 0)
+            # The first index is necessary because the vector is within a tuple
+            first_non_zero_index = nonzero[0][-1]
+            self.coefs_ += (X[first_non_zero_index] * y[first_non_zero_index])
+            self.callback_(self, X, y[first_non_zero_index])
+            diff = y * np.sign(X @ self.coefs_)
+            index += 1
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -89,7 +116,10 @@ class Perceptron(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
+
+        return np.sign(X @ self.coefs_)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -109,4 +139,4 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        raise NotImplementedError()
+        return misclassification_error(y, self.predict(X))

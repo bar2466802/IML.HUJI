@@ -1,7 +1,16 @@
+#################################################################
+# FILE : classifiers_evaluation.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 3
+# DESCRIPTION: Test Perceptron class
+#################################################################
+import numpy as np
+
 from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes
 from typing import Tuple
 from utils import *
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from math import atan2, pi
 
@@ -33,19 +42,36 @@ def run_perceptron():
     """
     Fit and plot fit progression of the Perceptron algorithm over both the linearly separable and inseparable datasets
 
+
     Create a line plot that shows the perceptron algorithm's training loss values (y-axis)
     as a function of the training iterations (x-axis).
     """
+    data, labels,  losses = [], [], []
+
+    def callback_func(fit: Perceptron, x: np.ndarray, y: int):
+        loss = fit.loss(data, np.array(labels))
+        losses.append(loss)
+    prev_path = "../datasets/"
     for n, f in [("Linearly Separable", "linearly_separable.npy"), ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
-        raise NotImplementedError()
-
+        data, labels = load_dataset(prev_path + f)
         # Fit Perceptron and record loss in each fit iteration
-        losses = []
-        raise NotImplementedError()
+        perceptron = Perceptron(callback=callback_func)
+        perceptron.fit(data, labels)
 
         # Plot figure of loss as function of fitting iteration
-        raise NotImplementedError()
+        name = n + " - Loss vs Training Iterations"
+        # fig = px.line(x=range(len(losses)),y=losses, title=name)
+        # fig.show()
+        plt.title(name)
+        plt.xlabel("Training Iterations")
+        plt.ylabel("Training Loss")
+        plt.plot(range(len(losses)), losses, color="green")
+        plot_name = name + ".png"
+        plt.savefig(plot_name)
+        plt.show()
+        plt.clf()
+        plt.cla()
 
 
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
@@ -79,7 +105,6 @@ def compare_gaussian_classifiers():
     """
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        raise NotImplementedError()
 
         # Fit models and predict over training set
         raise NotImplementedError()
@@ -103,4 +128,4 @@ def compare_gaussian_classifiers():
 if __name__ == '__main__':
     np.random.seed(0)
     run_perceptron()
-    compare_gaussian_classifiers()
+    # compare_gaussian_classifiers()
