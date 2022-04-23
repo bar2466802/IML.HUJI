@@ -72,7 +72,6 @@ class LDA(BaseEstimator):
         self._cov_inv = np.linalg.inv(cov)
         self.pi_ = np.array(pi)
 
-
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict responses for given samples using fitted estimator
