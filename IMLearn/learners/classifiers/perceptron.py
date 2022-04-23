@@ -96,9 +96,9 @@ class Perceptron(BaseEstimator):
         while index in range(self.max_iter_) and (diff <= 0).any():
             nonzero = np.where(diff <= 0)
             # The first index is necessary because the vector is within a tuple
-            first_non_zero_index = nonzero[0][-1]
-            self.coefs_ += (X[first_non_zero_index] * y[first_non_zero_index])
-            self.callback_(self, X, y[first_non_zero_index])
+            last_non_zero_index = nonzero[0][-1]
+            self.coefs_ += (X[last_non_zero_index] * y[last_non_zero_index])
+            self.callback_(self, X, y[last_non_zero_index])
             diff = y * np.sign(X @ self.coefs_)
             index += 1
 

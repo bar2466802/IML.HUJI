@@ -61,7 +61,7 @@ def run_perceptron():
 
         # Plot figure of loss as function of fitting iteration
         name = n + " - Loss vs Training Iterations"
-        # fig = px.line(x=range(len(losses)),y=losses, title=name)
+        # fig = px.line(x=range(len(losses)), y=losses, title=name)
         # fig.show()
         plt.title(name)
         plt.xlabel("Training Iterations")
