@@ -103,29 +103,50 @@ def compare_gaussian_classifiers():
     """
     Fit both Gaussian Naive Bayes and LDA classifiers on both gaussians1 and gaussians2 datasets
     """
-    for f in ["gaussian1.npy", "gaussian2.npy"]:
-        # Load dataset
+    prev_path = "../datasets/"
+    models = [LDA(), GaussianNaiveBayes()]
+    models_names = ["LDA", "Gaussian Naive Bayes"]
+    symbols = np.array(["circle", "x"])
+    plots = []
 
+    fig = make_subplots(rows=1, cols=2, subplot_titles=[rf"$\textbf{{{m}}}$" for m in models_names],
+                        horizontal_spacing=0.01, vertical_spacing=.03)
+
+    for i, (f, model) in enumerate(zip(["gaussian1.npy", "gaussian2.npy"], models)):
+        # Load dataset
+        data, labels = load_dataset(prev_path + f)
+        lims = np.array([data.min(axis=0), data.max(axis=0)]).T + np.array([-.4, .4])
+        title = "Dataset: " + f
         # Fit models and predict over training set
-        raise NotImplementedError()
+        # model.fit(data, labels)
+        # model.predict(data)
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
-        raise NotImplementedError()
+        fig.add_traces([decision_surface(model.fit(data, labels).predict, lims[0], lims[1], showscale=False),
+                        go.Scatter(x=data[:, 0], y=data[:, 1], mode="markers", showlegend=False,
+                                   marker=dict(color=labels, symbol=symbols[labels], colorscale=[custom[0], custom[-1]],
+                                               line=dict(color="black", width=1)))],
+                       rows=(i // 3) + 1, cols=(i % 3) + 1)
+
+        fig.update_layout(title=rf"$\textbf{{(2) Decision Boundaries Of Models - {title} Dataset}}$",
+                          margin=dict(t=100)) \
+            .update_xaxes(visible=False).update_yaxes(visible=False)
 
         # Add traces for data-points setting symbols and colors
-        raise NotImplementedError()
+        # raise NotImplementedError()
 
         # Add `X` dots specifying fitted Gaussians' means
-        raise NotImplementedError()
+        # raise NotImplementedError()
 
         # Add ellipses depicting the covariances of the fitted Gaussians
-        raise NotImplementedError()
+        # raise NotImplementedError()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     run_perceptron()
-    # compare_gaussian_classifiers()
+    compare_gaussian_classifiers()
+    print("Ex3: This is the end!")

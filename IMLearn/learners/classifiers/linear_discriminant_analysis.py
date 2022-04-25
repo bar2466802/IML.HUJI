@@ -9,6 +9,7 @@ from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
 from numpy.linalg import det, inv
+import pandas as pd
 
 
 class LDA(BaseEstimator):
@@ -55,22 +56,40 @@ class LDA(BaseEstimator):
             Responses of input data to fit to
         """
         self.classes_ = np.unique(y)
-        mu, cov, pi = [], [], []
-        for y_i in self.classes_:
-            # Calc mu of current y value
-            pi.append(np.mean(y == y_i))
-            mu_i = X[y == y_i].mean(axis=0)
-            mu.append(mu_i)
-            # Calc cov of current y value
-            scalar = 1 / len(X)
-            matrix = X[y == y_i] - mu_i
-            cov_i = scalar * np.sum(matrix.T @ matrix)
-            cov.append(cov_i)
-
-        self.mu_ = np.array(mu)
-        self.cov_ = np.array(cov)
-        self._cov_inv = np.linalg.inv(cov)
-        self.pi_ = np.array(pi)
+        x_pd = pd.DataFrame(X)
+        y_pd = pd.Series(y)
+        # self.pi_ = np.array(y_pd.groupby(by=y).mean())
+        self.pi_ = y_pd.value_counts(normalize=True)
+        self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        # self.cov_ = np.array(x_pd.groupby(by=y).cov())
+        # self._cov_inv = np.linalg.inv(self.cov_)
+        self.cov_ = np.zeros(shape=(X.shape[1], X.shape[1]))
+        for idx, group in enumerate(self.classes_):
+            x_i = X[y == group]
+            mu_i = self.mu_[idx]
+            matrix = x_i - mu_i
+            self.cov_ += matrix.T @ matrix
+        self.cov_ /= len(y)
+        self._cov_inv = np.linalg.inv(self.cov_)
+        # from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA_S
+        # lda = LDA_S(store_covariance=True)
+        # lda.fit(X, y)
+        # mu, cov, pi = [], [], []
+        # for y_i in self.classes_:
+        #     # Calc mu of current y value
+        #     pi.append(np.mean(y == y_i))
+        #     mu_i = X[y == y_i].mean(axis=0)
+        #     mu.append(mu_i)
+        #     # Calc cov of current y value
+        #     scalar = 1 / len(X)
+        #     matrix = X[y == y_i] - mu_i
+        #     cov_i = scalar * np.sum(matrix.T @ matrix)
+        #     cov.append(cov_i)
+        #
+        # # self.mu_ = np.array(mu)
+        # self.cov_ = np.array(cov)
+        # self._cov_inv = np.linalg.inv(cov)
+        # # self.pi_ = np.array(pi)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -105,10 +124,10 @@ class LDA(BaseEstimator):
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
-        a_k = self._cov_inv @ self.mu_
-        b_k = -0.5 * (self.mu_.T @ self._cov_inv @ self.cov_)
-        sign, log_pi_add_x = X @ np.linalg.slogdet(self.pi_)
-        likelihood = (sign * log_pi_add_x) + a_k + b_k
+        a_k = X @ self._cov_inv @ self.mu_.T
+        b_k = -0.5 * (self.mu_ @ self._cov_inv @ self.mu_.T)
+        log_pi = np.log(self.pi_)
+        likelihood = log_pi + a_k + b_k
         return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

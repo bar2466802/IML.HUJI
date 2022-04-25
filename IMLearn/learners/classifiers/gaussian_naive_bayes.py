@@ -45,9 +45,9 @@ class GaussianNaiveBayes(BaseEstimator):
         self.classes_ = np.unique(y)
         x_pd = pd.Series(X)
         y_pd = pd.Series(y)
-        self.pi_ = np.array(y_pd.groupby(by=self.classes_).mean())
-        self.mu_ = np.array(x_pd.groupby(by=self.classes_).mean())
-        self.vars_ = np.array(x_pd.groupby(by=self.classes_).var())
+        self.pi_ = np.array(y_pd.groupby(by=y).mean())
+        self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        self.vars_ = np.array(x_pd.groupby(by=y).var())
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
