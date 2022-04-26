@@ -5,6 +5,7 @@
 # DESCRIPTION: Test Perceptron class
 #################################################################
 import numpy as np
+import pandas as pd
 
 from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes
 from typing import Tuple
@@ -46,13 +47,15 @@ def run_perceptron():
     Create a line plot that shows the perceptron algorithm's training loss values (y-axis)
     as a function of the training iterations (x-axis).
     """
-    data, labels,  losses = [], [], []
+    data, labels, losses = [], [], []
 
     def callback_func(fit: Perceptron, x: np.ndarray, y: int):
         loss = fit.loss(data, np.array(labels))
         losses.append(loss)
+
     prev_path = "../datasets/"
-    for n, f in [("Linearly Separable", "linearly_separable.npy"), ("Linearly Inseparable", "linearly_inseparable.npy")]:
+    for n, f in [("Linearly Separable", "linearly_separable.npy"),
+                 ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
         data, labels = load_dataset(prev_path + f)
         # Fit Perceptron and record loss in each fit iteration
@@ -96,7 +99,7 @@ def get_ellipse(mu: np.ndarray, cov: np.ndarray):
     xs = (l1 * np.cos(theta) * np.cos(t)) - (l2 * np.sin(theta) * np.sin(t))
     ys = (l1 * np.sin(theta) * np.cos(t)) + (l2 * np.cos(theta) * np.sin(t))
 
-    return go.Scatter(x=mu[0] + xs, y=mu[1] + ys, mode="lines", marker_color="black")
+    return go.Scatter(x=mu[0] + xs, y=mu[1] + ys, mode="lines", marker_color="black", showlegend=False)
 
 
 def compare_gaussian_classifiers():
@@ -104,36 +107,106 @@ def compare_gaussian_classifiers():
     Fit both Gaussian Naive Bayes and LDA classifiers on both gaussians1 and gaussians2 datasets
     """
     prev_path = "../datasets/"
-    models = [LDA(), GaussianNaiveBayes()]
+    # models = [LDA(), GaussianNaiveBayes()]
+    models = [LDA(), LDA()]
     models_names = ["LDA", "Gaussian Naive Bayes"]
-    symbols = np.array(["circle", "x"])
-    plots = []
+    datasets = ["gaussian1.npy", "gaussian2.npy"]
+    symbols = np.array(["circle", "bowtie", "hexagram"])
+    # colors = np.array([custom[0], custom[1], custom[-1]])
+    colors = np.array(["red", "blue", "green"])
+    from IMLearn.metrics import accuracy
+    df_q2 = {
+        'model_name': [],
+        'dataset_name': [],
+        'data': [],
+        'labels': [],
+        'mu_': [],
+        'cov_': [],
+        'classes': [],
+        'accuracy': [],
+        'y_pred': []
+    }
+    for i, f in enumerate(datasets):
+        for j, model in enumerate(models):
+            # Load dataset
+            data, labels = load_dataset(prev_path + f)
+            model.fit(data, labels)
+            y_pred = model.predict(data)
+            accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
+            from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+            from sklearn.metrics import accuracy_score
 
-    fig = make_subplots(rows=1, cols=2, subplot_titles=[rf"$\textbf{{{m}}}$" for m in models_names],
-                        horizontal_spacing=0.01, vertical_spacing=.03)
+            # lda = LinearDiscriminantAnalysis()
+            # lda.fit(data, labels)
+            # y_p = lda.predict(data)
+            # ac = accuracy_score(labels, y_p)
+            # print(ac)
 
-    for i, (f, model) in enumerate(zip(["gaussian1.npy", "gaussian2.npy"], models)):
-        # Load dataset
-        data, labels = load_dataset(prev_path + f)
-        lims = np.array([data.min(axis=0), data.max(axis=0)]).T + np.array([-.4, .4])
-        title = "Dataset: " + f
-        # Fit models and predict over training set
-        # model.fit(data, labels)
-        # model.predict(data)
+            # Update Dataframe
+            df_q2['accuracy'].append(accuracy_val)
+            df_q2['y_pred'].append(y_pred)
+            df_q2['model_name'].append(models_names[j])
+            df_q2['data'].append(data)
+            df_q2['labels'].append(labels)
+            df_q2['mu_'].append(model.mu_)
+            df_q2['cov_'].append(model.cov_)
+            df_q2['classes'].append(model.classes_)
+            df_q2['dataset_name'].append(f)
 
-        # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
-        # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
-        # Create subplots
-        from IMLearn.metrics import accuracy
-        fig.add_traces([decision_surface(model.fit(data, labels).predict, lims[0], lims[1], showscale=False),
-                        go.Scatter(x=data[:, 0], y=data[:, 1], mode="markers", showlegend=False,
-                                   marker=dict(color=labels, symbol=symbols[labels], colorscale=[custom[0], custom[-1]],
-                                               line=dict(color="black", width=1)))],
-                       rows=(i // 3) + 1, cols=(i % 3) + 1)
+    df_q2 = pd.DataFrame(df_q2)
+    for i, (group_name, df_group) in enumerate(df_q2.groupby('dataset_name')):
+        fig = make_subplots(
+            subplot_titles=[rf"$\textbf Model: {{{item['model_name']}}} - Accuracy: {{{item['accuracy']}}}$" for
+                            idx, item in df_group.iterrows()],
+            rows=1, cols=2, horizontal_spacing=0.01, vertical_spacing=.03)
+        classes_options = df_group.classes.values[0]
+        # Add legend
+        for idx, class_name in enumerate(classes_options):
+            pred_text = "color of pred :" + str(classes_options[idx])
+            true_text = "symbol of true :" + str(classes_options[idx])
+            fig.append_trace(go.Scatter(x=[None], y=[None], mode='markers', legendgroup=true_text, showlegend=True,
+                                        marker=dict(size=10, symbol=symbols[idx], color="black"), name=true_text),
+                             row=1, col=1)
+            fig.append_trace(go.Scatter(x=[None], y=[None], mode='markers', legendgroup=pred_text, showlegend=True,
+                                        marker=dict(size=10, color=colors[idx]), name=pred_text), row=1, col=1)
 
-        fig.update_layout(title=rf"$\textbf{{(2) Decision Boundaries Of Models - {title} Dataset}}$",
-                          margin=dict(t=100)) \
-            .update_xaxes(visible=False).update_yaxes(visible=False)
+        for idx, cell_data in df_group.iterrows():
+            title = "Dataset: " + cell_data['dataset_name']
+            main_plot = go.Scatter(x=cell_data.data[:, 0], y=cell_data.data[:, 1], mode="markers", showlegend=False,
+                                   marker=dict(color=cell_data.y_pred, symbol=symbols[cell_data.labels],
+                                               colorscale=[custom[0], custom[1], custom[-1]], size=8,
+                                               line=dict(width=2, color="black")))
+            fig.append_trace(main_plot, row=1, col=(idx % 2) + 1)
+            fig.update_layout(title=rf"$\textbf{{Decision Boundaries Of Models - LDA & GNB {title}}}$",
+                              margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(visible=False)
+            # Add ellipses
+            for mu in cell_data.mu_:
+                fig.append_trace(get_ellipse(mu, cell_data.cov_), row=1, col=(idx % 2) + 1)
+                fig.append_trace(go.Scatter(x=[mu[0]], y=[mu[1]], mode='markers', showlegend=False,
+                                            marker=dict(size=14, symbol="x", color="black"),
+                                            line=dict(width=5, color='DarkSlateGrey')), row=1, col=(idx % 2) + 1)
+        fig.show()
+
+        # for i, f in enumerate(df_q2):
+        #     fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.01, vertical_spacing=.03)
+        #     for j, model in enumerate(models):
+        #         # Load dataset
+        #         data, labels = load_dataset(prev_path + f)
+        #         model.fit(data, labels)
+        #         y_pred = model.predict(data)
+        #         accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
+        #         title = "Dataset: " + f
+        #         plots = [get_ellipse(mu, model.cov_) for mu in model.mu_]
+        #         plots.append(go.Scatter(x=data[:, 0], y=data[:, 1], mode="markers", showlegend=False,
+        #                                 marker=dict(color=y_pred, symbol=symbols[labels],
+        #                                             colorscale=[custom[0], custom[1], custom[-1]],
+        #                                             line=dict(color="black", width=1))))
+        #         fig.add_traces(plots, rows=1, cols=(j % 2) + 1)
+        #         fig.update_layout(title=rf"$\textbf{{(2) Decision Boundaries Of Models - LDA & GNB {title}}}$",
+        #                           subplot_titles=[rf"$\textbf{{{m}}} Accuracy = {{{accuracy_val}}}$" for m in
+        #                                           models_names],
+        #                           margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(visible=False)
+        # fig.show()
 
         # Add traces for data-points setting symbols and colors
         # raise NotImplementedError()
@@ -143,10 +216,12 @@ def compare_gaussian_classifiers():
 
         # Add ellipses depicting the covariances of the fitted Gaussians
         # raise NotImplementedError()
+        # from sklearn.metrics import accuracy_score as accuracy_score
+        # accuracy_score()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    run_perceptron()
-    compare_gaussian_classifiers()
-    print("Ex3: This is the end!")
+run_perceptron()
+compare_gaussian_classifiers()
+print("Ex3: This is the end!")

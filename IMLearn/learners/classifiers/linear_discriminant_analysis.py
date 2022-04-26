@@ -58,11 +58,8 @@ class LDA(BaseEstimator):
         self.classes_ = np.unique(y)
         x_pd = pd.DataFrame(X)
         y_pd = pd.Series(y)
-        # self.pi_ = np.array(y_pd.groupby(by=y).mean())
-        self.pi_ = y_pd.value_counts(normalize=True)
+        self.pi_ = np.array(y_pd.value_counts(normalize=True))
         self.mu_ = np.array(x_pd.groupby(by=y).mean())
-        # self.cov_ = np.array(x_pd.groupby(by=y).cov())
-        # self._cov_inv = np.linalg.inv(self.cov_)
         self.cov_ = np.zeros(shape=(X.shape[1], X.shape[1]))
         for idx, group in enumerate(self.classes_):
             x_i = X[y == group]
@@ -125,9 +122,11 @@ class LDA(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
         a_k = X @ self._cov_inv @ self.mu_.T
-        b_k = -0.5 * (self.mu_ @ self._cov_inv @ self.mu_.T)
+        b = -0.5 * (self.mu_ @ self._cov_inv @ self.mu_.T)
         log_pi = np.log(self.pi_)
-        likelihood = log_pi + a_k + b_k
+        likelihood = log_pi + a_k
+        for b_k in b:
+            likelihood += b_k
         return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
