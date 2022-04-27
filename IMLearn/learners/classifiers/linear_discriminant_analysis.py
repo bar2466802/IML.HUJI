@@ -72,7 +72,7 @@ class LDA(BaseEstimator):
             self.pi_[idx] = pi_i
             matrix = x_i - mu_i
             self.cov_ += matrix.T @ matrix
-        self.cov_ /= len(y)
+        self.cov_ /= (len(y) - len(self.classes_)) # unbiased estimator
         self._cov_inv = np.linalg.inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:

@@ -71,7 +71,7 @@ class GaussianNaiveBayes(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return np.argmax(self.likelihood(X), axis=1)
+        return self.classes_[np.argmax(self.likelihood(X), axis=1)]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -92,24 +92,16 @@ class GaussianNaiveBayes(BaseEstimator):
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
         likelihood = np.zeros(shape=(X.shape[0], len(self.classes_)))
-        for x in X:
-            for i in range(len(self.classes_)):
-                mean = self.mu_[i]
-                var = self.vars_[i]
-                log_li = -0.5 * (np.log(2 * np.pi * var)) - 0.5 * ((x - mean) ** 2) / var
-                pi_log = np.log(self.pi_)
-                likelihood[i] = log_li.sum() + pi_log
-
-        # posteriors = []
-        # for i, c in enumerate(self.classes_):
-        #     prior = np.log(self.pi_[i])
-        #     posterior = np.sum(np.log(self._calculate_likelihood(i, X)))
-        #     posterior = prior + posterior
-        #     posteriors.append(posterior)
-        # posteriors = np.array(posteriors)
-        # # return the class with highest posterior probability
-        # if np.equal(posteriors, likelihood):
-        #     print("yes!")
+        for i, key in enumerate(self.classes_):
+            mu_i = self.mu_[i]
+            var_i = self.vars_[i]
+            cov_i = np.diag(var_i)
+            inv_cov_i = np.linalg.inv(np.diag(var_i))
+            pi_i = self.pi_[i]
+            d = X[:, np.newaxis, :] - mu_i
+            mahalanobis = np.sum(d.dot(inv_cov_i) * d, axis=2).flatten()
+            pdf = np.exp(-.5 * mahalanobis) / np.sqrt((2 * np.pi) ** len(X) * np.linalg.det(cov_i)) * pi_i
+            likelihood[:, i] = pdf
         return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

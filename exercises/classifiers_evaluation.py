@@ -111,7 +111,7 @@ def compare_gaussian_classifiers():
     models_names = ["LDA", "Gaussian Naive Bayes"]
     datasets = ["gaussian1.npy", "gaussian2.npy"]
     symbols = np.array(["circle", "bowtie", "hexagram", "triangle-up", "pentagon", "star"])
-    colors = np.array(["red", "blue", "green", "pink", "yellow", "purple"])
+    colors = np.array(["red", "blue", "LightGreen", "pink", "yellow", "purple"])
     from IMLearn.metrics import accuracy
     df_q2 = {
         'model_name': [],
@@ -131,16 +131,13 @@ def compare_gaussian_classifiers():
             model.fit(data, labels)
             y_pred = model.predict(data)
             accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
-            # from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-            # from sklearn.metrics import accuracy_score
-            # lda = LinearDiscriminantAnalysis()
-            # lda.fit(data, labels)
-            # y_p = lda.predict(data)
-            # ac = accuracy_score(labels, y_p)
-            # print(ac)
-
             # Update Dataframe
             df_q2['accuracy'].append(accuracy_val)
+            from sklearn.naive_bayes import GaussianNB
+            clf = GaussianNB()
+            clf.fit(data, labels)
+            y_p = clf.predict(data)
+            score = accuracy(y_true=labels, y_pred=y_p)
             df_q2['y_pred'].append(y_pred)
             df_q2['model_name'].append(model_name)
             df_q2['data'].append(data)
@@ -174,9 +171,8 @@ def compare_gaussian_classifiers():
             title = "Dataset: " + cell_data['dataset_name']
             # Add traces for data-points setting symbols and colors
             main_plot = go.Scatter(x=cell_data.data[:, 0], y=cell_data.data[:, 1], mode="markers", showlegend=False,
-                                   marker=dict(color=cell_data.y_pred, symbol=symbols[cell_data.labels],
-                                               colorscale=[custom[0], custom[1], custom[-1]], size=8,
-                                               line=dict(width=2, color="black")))
+                                   marker=dict(color=colors[cell_data.y_pred], symbol=symbols[cell_data.labels], size=8,
+                                               line=dict(width=1, color="violet")))
             fig.append_trace(main_plot, row=1, col=(idx % 2) + 1)
             fig.update_layout(title=rf"$\textbf{{Decision Boundaries Of Models - LDA & GNB {title}}}$",
                               margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(visible=False)
