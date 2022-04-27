@@ -107,13 +107,11 @@ def compare_gaussian_classifiers():
     Fit both Gaussian Naive Bayes and LDA classifiers on both gaussians1 and gaussians2 datasets
     """
     prev_path = "../datasets/"
-    # models = [LDA(), GaussianNaiveBayes()]
-    models = [LDA(), LDA()]
+    models = [LDA(), GaussianNaiveBayes()]
     models_names = ["LDA", "Gaussian Naive Bayes"]
     datasets = ["gaussian1.npy", "gaussian2.npy"]
-    symbols = np.array(["circle", "bowtie", "hexagram"])
-    # colors = np.array([custom[0], custom[1], custom[-1]])
-    colors = np.array(["red", "blue", "green"])
+    symbols = np.array(["circle", "bowtie", "hexagram", "triangle-up", "pentagon", "star"])
+    colors = np.array(["red", "blue", "green", "pink", "yellow", "purple"])
     from IMLearn.metrics import accuracy
     df_q2 = {
         'model_name': [],
@@ -127,15 +125,14 @@ def compare_gaussian_classifiers():
         'y_pred': []
     }
     for i, f in enumerate(datasets):
-        for j, model in enumerate(models):
-            # Load dataset
-            data, labels = load_dataset(prev_path + f)
+        # Load dataset
+        data, labels = load_dataset(prev_path + f)
+        for model, model_name in zip(models, models_names):
             model.fit(data, labels)
             y_pred = model.predict(data)
             accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
-            from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-            from sklearn.metrics import accuracy_score
-
+            # from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+            # from sklearn.metrics import accuracy_score
             # lda = LinearDiscriminantAnalysis()
             # lda.fit(data, labels)
             # y_p = lda.predict(data)
@@ -145,11 +142,14 @@ def compare_gaussian_classifiers():
             # Update Dataframe
             df_q2['accuracy'].append(accuracy_val)
             df_q2['y_pred'].append(y_pred)
-            df_q2['model_name'].append(models_names[j])
+            df_q2['model_name'].append(model_name)
             df_q2['data'].append(data)
             df_q2['labels'].append(labels)
             df_q2['mu_'].append(model.mu_)
-            df_q2['cov_'].append(model.cov_)
+            if hasattr(model, 'cov_'):
+                df_q2['cov_'].append(model.cov_)
+            else:
+                df_q2['cov_'].append(model.vars_)
             df_q2['classes'].append(model.classes_)
             df_q2['dataset_name'].append(f)
 
@@ -172,6 +172,7 @@ def compare_gaussian_classifiers():
 
         for idx, cell_data in df_group.iterrows():
             title = "Dataset: " + cell_data['dataset_name']
+            # Add traces for data-points setting symbols and colors
             main_plot = go.Scatter(x=cell_data.data[:, 0], y=cell_data.data[:, 1], mode="markers", showlegend=False,
                                    marker=dict(color=cell_data.y_pred, symbol=symbols[cell_data.labels],
                                                colorscale=[custom[0], custom[1], custom[-1]], size=8,
@@ -180,48 +181,21 @@ def compare_gaussian_classifiers():
             fig.update_layout(title=rf"$\textbf{{Decision Boundaries Of Models - LDA & GNB {title}}}$",
                               margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(visible=False)
             # Add ellipses
-            for mu in cell_data.mu_:
-                fig.append_trace(get_ellipse(mu, cell_data.cov_), row=1, col=(idx % 2) + 1)
+            for j, mu in enumerate(cell_data.mu_):
+                # Add ellipses depicting the covariances of the fitted Gaussians
+                cov = cell_data.cov_
+                if cov.shape[0] != cov.shape[1]:  # check if real cov or var
+                    cov = np.diag(cov[j])
+                fig.append_trace(get_ellipse(mu, cov), row=1, col=(idx % 2) + 1)
+                # Add `X` dots specifying fitted Gaussians' means
                 fig.append_trace(go.Scatter(x=[mu[0]], y=[mu[1]], mode='markers', showlegend=False,
                                             marker=dict(size=14, symbol="x", color="black"),
                                             line=dict(width=5, color='DarkSlateGrey')), row=1, col=(idx % 2) + 1)
         fig.show()
 
-        # for i, f in enumerate(df_q2):
-        #     fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.01, vertical_spacing=.03)
-        #     for j, model in enumerate(models):
-        #         # Load dataset
-        #         data, labels = load_dataset(prev_path + f)
-        #         model.fit(data, labels)
-        #         y_pred = model.predict(data)
-        #         accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
-        #         title = "Dataset: " + f
-        #         plots = [get_ellipse(mu, model.cov_) for mu in model.mu_]
-        #         plots.append(go.Scatter(x=data[:, 0], y=data[:, 1], mode="markers", showlegend=False,
-        #                                 marker=dict(color=y_pred, symbol=symbols[labels],
-        #                                             colorscale=[custom[0], custom[1], custom[-1]],
-        #                                             line=dict(color="black", width=1))))
-        #         fig.add_traces(plots, rows=1, cols=(j % 2) + 1)
-        #         fig.update_layout(title=rf"$\textbf{{(2) Decision Boundaries Of Models - LDA & GNB {title}}}$",
-        #                           subplot_titles=[rf"$\textbf{{{m}}} Accuracy = {{{accuracy_val}}}$" for m in
-        #                                           models_names],
-        #                           margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(visible=False)
-        # fig.show()
-
-        # Add traces for data-points setting symbols and colors
-        # raise NotImplementedError()
-
-        # Add `X` dots specifying fitted Gaussians' means
-        # raise NotImplementedError()
-
-        # Add ellipses depicting the covariances of the fitted Gaussians
-        # raise NotImplementedError()
-        # from sklearn.metrics import accuracy_score as accuracy_score
-        # accuracy_score()
-
 
 if __name__ == '__main__':
     np.random.seed(0)
-run_perceptron()
-compare_gaussian_classifiers()
-print("Ex3: This is the end!")
+    # run_perceptron()
+    compare_gaussian_classifiers()
+    print("Ex3: This is the end!")

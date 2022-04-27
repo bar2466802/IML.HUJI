@@ -56,37 +56,24 @@ class LDA(BaseEstimator):
             Responses of input data to fit to
         """
         self.classes_ = np.unique(y)
-        x_pd = pd.DataFrame(X)
-        y_pd = pd.Series(y)
-        self.pi_ = np.array(y_pd.value_counts(normalize=True))
-        self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        # x_pd = pd.DataFrame(X)
+        # y_pd = pd.DataFrame(y)
+        # self.pi_ = np.array(y_pd.value_counts(normalize=True))
+        # self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        self.pi_ = np.zeros(shape=(len(self.classes_)))
+        self.mu_ = np.zeros(shape=(len(self.classes_), X.shape[1]))
         self.cov_ = np.zeros(shape=(X.shape[1], X.shape[1]))
         for idx, group in enumerate(self.classes_):
             x_i = X[y == group]
-            mu_i = self.mu_[idx]
+            # mu_i = self.mu_[idx]
+            mu_i = np.mean(x_i, axis=0)
+            self.mu_[idx] = mu_i
+            pi_i = (y == group).sum() / len(y)
+            self.pi_[idx] = pi_i
             matrix = x_i - mu_i
             self.cov_ += matrix.T @ matrix
         self.cov_ /= len(y)
         self._cov_inv = np.linalg.inv(self.cov_)
-        # from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA_S
-        # lda = LDA_S(store_covariance=True)
-        # lda.fit(X, y)
-        # mu, cov, pi = [], [], []
-        # for y_i in self.classes_:
-        #     # Calc mu of current y value
-        #     pi.append(np.mean(y == y_i))
-        #     mu_i = X[y == y_i].mean(axis=0)
-        #     mu.append(mu_i)
-        #     # Calc cov of current y value
-        #     scalar = 1 / len(X)
-        #     matrix = X[y == y_i] - mu_i
-        #     cov_i = scalar * np.sum(matrix.T @ matrix)
-        #     cov.append(cov_i)
-        #
-        # # self.mu_ = np.array(mu)
-        # self.cov_ = np.array(cov)
-        # self._cov_inv = np.linalg.inv(cov)
-        # # self.pi_ = np.array(pi)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -102,7 +89,7 @@ class LDA(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return np.argmax(self.likelihood(X), axis=1)
+        return self.classes_[np.argmax(self.likelihood(X), axis=1)]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -121,12 +108,14 @@ class LDA(BaseEstimator):
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
-        a_k = X @ self._cov_inv @ self.mu_.T
-        b = -0.5 * (self.mu_ @ self._cov_inv @ self.mu_.T)
-        log_pi = np.log(self.pi_)
-        likelihood = log_pi + a_k
-        for b_k in b:
-            likelihood += b_k
+        likelihood = np.zeros(shape=(X.shape[0], len(self.classes_)))
+        for i, x in enumerate(X):
+            likelihood_i = np.zeros(shape=len(self.classes_))
+            for idx in range(len(self.classes_)):
+                a_k = self._cov_inv @ self.mu_[idx]
+                b_k = np.log(self.pi_[idx]) - 0.5 * (self.mu_[idx] @ self._cov_inv @ self.mu_[idx].T)
+                likelihood_i[idx] = a_k.T @ x + b_k
+            likelihood[i] = likelihood_i
         return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

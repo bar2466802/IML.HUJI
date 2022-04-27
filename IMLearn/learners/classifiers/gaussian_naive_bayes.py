@@ -43,11 +43,19 @@ class GaussianNaiveBayes(BaseEstimator):
             Responses of input data to fit to
         """
         self.classes_ = np.unique(y)
-        x_pd = pd.Series(X)
-        y_pd = pd.Series(y)
-        self.pi_ = np.array(y_pd.groupby(by=y).mean())
+        x_pd = pd.DataFrame(X)
+        y_pd = pd.DataFrame(y)
+        self.pi_ = np.array(y_pd.value_counts(normalize=True))
         self.mu_ = np.array(x_pd.groupby(by=y).mean())
-        self.vars_ = np.array(x_pd.groupby(by=y).var())
+        # self.vars_ = np.array(x_pd.groupby(by=y).var())
+        self.vars_ = np.zeros(shape=(self.classes_.shape[0], X.shape[1]))
+        for idx, group in enumerate(self.classes_):
+            x_i = X[y == group]
+            self.vars_[idx] = np.var(x_i, axis=0)
+
+        # from sklearn.naive_bayes import GaussianNB
+        # clf = GaussianNB()
+        # clf.fit(X, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -82,21 +90,27 @@ class GaussianNaiveBayes(BaseEstimator):
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
-        # pi
-        pi = np.pi
-        # first part of the equation
-        # 1 divided by the sqrt of 2 * pi * y_variance
-        equation_1 = 1 / (np.sqrt(2 * pi * self.vars_))
 
-        # second part of equation implementation
-        # denominator of equation
-        denom = 2 * self.vars_
-        # numerator calculation
-        numerator = np.power((X - self.mu_), 2)
-        # the exponent
-        expo = np.exp(-(numerator / denom))
-        prob = equation_1 * expo
-        return prob
+        likelihood = np.zeros(shape=(X.shape[0], len(self.classes_)))
+        for x in X:
+            for i in range(len(self.classes_)):
+                mean = self.mu_[i]
+                var = self.vars_[i]
+                log_li = -0.5 * (np.log(2 * np.pi * var)) - 0.5 * ((x - mean) ** 2) / var
+                pi_log = np.log(self.pi_)
+                likelihood[i] = log_li.sum() + pi_log
+
+        # posteriors = []
+        # for i, c in enumerate(self.classes_):
+        #     prior = np.log(self.pi_[i])
+        #     posterior = np.sum(np.log(self._calculate_likelihood(i, X)))
+        #     posterior = prior + posterior
+        #     posteriors.append(posterior)
+        # posteriors = np.array(posteriors)
+        # # return the class with highest posterior probability
+        # if np.equal(posteriors, likelihood):
+        #     print("yes!")
+        return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -117,3 +131,10 @@ class GaussianNaiveBayes(BaseEstimator):
         """
         from ...metrics import misclassification_error
         return misclassification_error(y, self.predict(X))
+
+    def _calculate_likelihood(self, class_idx, x):
+        mean = self.mu_[class_idx]
+        var = self.vars_[class_idx]
+        num = np.exp(- (x - mean) ** 2 / (2 * var))
+        denom = np.sqrt(2 * np.pi * var)
+        return num / denom
