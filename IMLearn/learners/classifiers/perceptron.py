@@ -101,6 +101,7 @@ class Perceptron(BaseEstimator):
             self.callback_(self, X, y[last_non_zero_index])
             diff = y * np.sign(X @ self.coefs_)
             index += 1
+        print("number of iterations: " + str(index))
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """

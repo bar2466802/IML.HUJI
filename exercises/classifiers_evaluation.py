@@ -57,14 +57,19 @@ def run_perceptron():
                  ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
         data, labels = load_dataset(prev_path + f)
+        losses = []
         # Fit Perceptron and record loss in each fit iteration
         perceptron = Perceptron(callback=callback_func)
         perceptron.fit(data, labels)
 
         # Plot figure of loss as function of fitting iteration
         name = n + " - Loss vs Training Iterations"
-        # fig = px.line(x=range(len(losses)), y=losses, title=name)
-        # fig.show()
+        fig = px.line(x=range(len(losses)), y=losses, title=name,
+                      labels={
+                          "x": "Training Iterations",
+                          "y": "Training Iterations"
+                      })
+        fig.show()
         plt.title(name)
         plt.xlabel("Training Iterations")
         plt.ylabel("Training Loss")
@@ -74,6 +79,9 @@ def run_perceptron():
         plt.show()
         plt.clf()
         plt.cla()
+        title_scatter = "Scatter plot of dataset: " + n
+        px.scatter(x=data[:, 0], y=data[:, 1], color=labels, title=title_scatter).update_coloraxes(
+            showscale=False).show()
 
 
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
@@ -132,11 +140,6 @@ def compare_gaussian_classifiers():
             accuracy_val = accuracy(y_true=labels, y_pred=y_pred)
             # Update Dataframe
             df_q2['accuracy'].append(accuracy_val)
-            from sklearn.naive_bayes import GaussianNB
-            clf = GaussianNB()
-            clf.fit(data, labels)
-            y_p = clf.predict(data)
-            score = accuracy(y_true=labels, y_pred=y_p)
             df_q2['y_pred'].append(y_pred)
             df_q2['model_name'].append(model_name)
             df_q2['data'].append(data)
