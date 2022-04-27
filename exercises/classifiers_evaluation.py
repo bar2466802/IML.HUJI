@@ -2,11 +2,10 @@
 # FILE : classifiers_evaluation.py
 # WRITER : Bar Melinarskiy
 # EXERCISE : Intro to Machine Learning - 67577 - Exercise 3
-# DESCRIPTION: Test Perceptron class
+# DESCRIPTION: Test classes: Perceptron, LDA and GNB
 #################################################################
 import numpy as np
 import pandas as pd
-
 from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes
 from typing import Tuple
 from utils import *

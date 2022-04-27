@@ -9,7 +9,6 @@ from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
 from numpy.linalg import det, inv
-import pandas as pd
 
 
 class LDA(BaseEstimator):
@@ -56,16 +55,11 @@ class LDA(BaseEstimator):
             Responses of input data to fit to
         """
         self.classes_ = np.unique(y)
-        # x_pd = pd.DataFrame(X)
-        # y_pd = pd.DataFrame(y)
-        # self.pi_ = np.array(y_pd.value_counts(normalize=True))
-        # self.mu_ = np.array(x_pd.groupby(by=y).mean())
         self.pi_ = np.zeros(shape=(len(self.classes_)))
         self.mu_ = np.zeros(shape=(len(self.classes_), X.shape[1]))
         self.cov_ = np.zeros(shape=(X.shape[1], X.shape[1]))
         for idx, group in enumerate(self.classes_):
             x_i = X[y == group]
-            # mu_i = self.mu_[idx]
             mu_i = np.mean(x_i, axis=0)
             self.mu_[idx] = mu_i
             pi_i = (y == group).sum() / len(y)
@@ -73,7 +67,7 @@ class LDA(BaseEstimator):
             matrix = x_i - mu_i
             self.cov_ += matrix.T @ matrix
         self.cov_ /= (len(y) - len(self.classes_))  # unbiased estimator
-        self._cov_inv = np.linalg.inv(self.cov_)
+        self._cov_inv = inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """

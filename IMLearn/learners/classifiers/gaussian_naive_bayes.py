@@ -1,7 +1,13 @@
+#################################################################
+# FILE : gaussian_naive_bayes.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 3
+# DESCRIPTION: GNB class
+#################################################################
+
 from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
-import pandas as pd
 
 
 class GaussianNaiveBayes(BaseEstimator):
@@ -43,13 +49,8 @@ class GaussianNaiveBayes(BaseEstimator):
             Responses of input data to fit to
         """
         self.classes_ = np.unique(y)
-        x_pd = pd.DataFrame(X)
-        y_pd = pd.DataFrame(y)
-        # self.pi_ = np.array(y_pd.value_counts(normalize=True))
-        # self.mu_ = np.array(x_pd.groupby(by=y).mean())
         self.pi_ = np.zeros(shape=(len(self.classes_)))
         self.mu_ = np.zeros(shape=(len(self.classes_), X.shape[1]))
-        # self.vars_ = np.array(x_pd.groupby(by=y).var())
         self.vars_ = np.zeros(shape=(self.classes_.shape[0], X.shape[1]))
         for idx, group in enumerate(self.classes_):
             x_i = X[y == group]
@@ -58,10 +59,6 @@ class GaussianNaiveBayes(BaseEstimator):
             pi_i = (y == group).sum() / len(y)
             self.pi_[idx] = pi_i
             self.vars_[idx] = np.var(x_i, axis=0)
-
-        # from sklearn.naive_bayes import GaussianNB
-        # clf = GaussianNB()
-        # clf.fit(X, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
