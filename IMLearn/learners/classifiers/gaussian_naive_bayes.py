@@ -45,12 +45,18 @@ class GaussianNaiveBayes(BaseEstimator):
         self.classes_ = np.unique(y)
         x_pd = pd.DataFrame(X)
         y_pd = pd.DataFrame(y)
-        self.pi_ = np.array(y_pd.value_counts(normalize=True))
-        self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        # self.pi_ = np.array(y_pd.value_counts(normalize=True))
+        # self.mu_ = np.array(x_pd.groupby(by=y).mean())
+        self.pi_ = np.zeros(shape=(len(self.classes_)))
+        self.mu_ = np.zeros(shape=(len(self.classes_), X.shape[1]))
         # self.vars_ = np.array(x_pd.groupby(by=y).var())
         self.vars_ = np.zeros(shape=(self.classes_.shape[0], X.shape[1]))
         for idx, group in enumerate(self.classes_):
             x_i = X[y == group]
+            mu_i = np.mean(x_i, axis=0)
+            self.mu_[idx] = mu_i
+            pi_i = (y == group).sum() / len(y)
+            self.pi_[idx] = pi_i
             self.vars_[idx] = np.var(x_i, axis=0)
 
         # from sklearn.naive_bayes import GaussianNB
@@ -96,7 +102,7 @@ class GaussianNaiveBayes(BaseEstimator):
             mu_i = self.mu_[i]
             var_i = self.vars_[i]
             cov_i = np.diag(var_i)
-            inv_cov_i = np.linalg.inv(np.diag(var_i))
+            inv_cov_i = np.linalg.inv(cov_i)
             pi_i = self.pi_[i]
             d = X[:, np.newaxis, :] - mu_i
             mahalanobis = np.sum(d.dot(inv_cov_i) * d, axis=2).flatten()
