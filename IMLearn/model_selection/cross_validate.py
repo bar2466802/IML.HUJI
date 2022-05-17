@@ -1,3 +1,10 @@
+#################################################################
+# FILE : cross_validate.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 5
+# DESCRIPTION: K-fold cross-validation
+#################################################################
+
 from __future__ import annotations
 from copy import deepcopy
 from typing import Tuple, Callable

@@ -192,8 +192,31 @@ def compare_gaussian_classifiers():
         fig.show()
 
 
+def quiz_questions():
+    print("Quiz answers:")
+    print("Question 1 & 3:")
+    data_q1 = np.array([(0, 0), (1, 0), (2, 1), (3, 1), (4, 1), (5, 1), (6, 2), (7, 2)])
+    X, y = data_q1[:, :2], data_q1[:, 1].astype(int)
+    gnb = GaussianNaiveBayes()
+    gnb.fit(X, y)
+    print("Classes: " + str(gnb.classes_))
+    print("Classes probabilities: " + str(gnb.pi_))
+    print("expectation : " + str(gnb.mu_))
+    print("variance : " + str(gnb.mu_))
+
+    print("Question 2:")
+    # data_q2 = np.array([([1, 1], 0), ([1, 2], 0), ([2, 3], 1), ([2, 4], 1), ([3, 3], 1), ([3, 4], 1)])
+    X = np.array([[1, 1], [1, 2], [2, 3], [2, 4], [3, 3], [3, 4]])
+    y = np.array([0, 0, 1, 1, 1, 1])
+    gnb.fit(X, y)
+    print("Classes: " + str(gnb.classes_))
+    print("Classes probabilities: " + str(gnb.pi_))
+    print("variance  : " + str(gnb.vars_))
+
+
 if __name__ == '__main__':
     np.random.seed(0)
     run_perceptron()
     compare_gaussian_classifiers()
+    # quiz_questions()
     print("Ex3: This is the end!")

@@ -81,25 +81,27 @@ class Perceptron(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
-        if self.include_intercept_:
-            X = np.c_[np.ones(len(X)), X]
 
-        self.coefs_ = np.empty(X.shape[1], dtype=float)
+        x_copy = np.copy(X)
+        if self.include_intercept_:
+            x_copy = np.c_[np.ones(len(X)), X]
+
+        self.coefs_ = np.zeros(x_copy.shape[1])
         # From Gilad's post in the forum:
         # "You can therefore change `fitted_` to `True` in the `Perceptron.fit` after changing w for the first time"
         self.fitted_ = True
-        diff = y * np.sign(X @ self.coefs_)
+        diff = np.sign(x_copy @ self.coefs_) - y  # if the true value is 0 then * won't work sue I used - instead
         index = 0
 
         # Iterate over given data as long as that did not reach `self.max_iter_`
         # and as long as there exists a sample misclassified
-        while index in range(self.max_iter_) and (diff <= 0).any():
-            nonzero = np.where(diff <= 0)
+        while index < self.max_iter_ and diff.any():
+            nonzero = np.where(diff != 0)
             # The first index is necessary because the vector is within a tuple
             last_non_zero_index = nonzero[0][-1]
-            self.coefs_ += (X[last_non_zero_index] * y[last_non_zero_index])
-            self.callback_(self, X, y[last_non_zero_index])
-            diff = y * np.sign(X @ self.coefs_)
+            self.coefs_ += (x_copy[last_non_zero_index] * y[last_non_zero_index])
+            self.callback_(self, x_copy, y[last_non_zero_index])
+            diff = np.sign(x_copy @ self.coefs_) - y
             index += 1
         print("number of iterations: " + str(index))
 
@@ -117,10 +119,11 @@ class Perceptron(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        x_copy = np.copy(X)
         if self.include_intercept_:
-            X = np.c_[np.ones(len(X)), X]
+            x_copy = np.c_[np.ones(len(X)), X]
 
-        return np.sign(X @ self.coefs_)
+        return np.sign(x_copy @ self.coefs_)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

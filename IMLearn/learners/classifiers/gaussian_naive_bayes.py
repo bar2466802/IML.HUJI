@@ -58,7 +58,8 @@ class GaussianNaiveBayes(BaseEstimator):
             self.mu_[idx] = mu_i
             pi_i = (y == group).sum() / len(y)
             self.pi_[idx] = pi_i
-            self.vars_[idx] = np.var(x_i, axis=0)
+            self.vars_[idx] = np.var(x_i, axis=0, ddof=1)
+            # self.vars_[idx] = np.var(x_i, axis=0)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
