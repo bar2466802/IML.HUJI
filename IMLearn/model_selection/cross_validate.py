@@ -50,10 +50,10 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     train_scores = []  # to check if we needed it or not
     validation_scores = []
     for k, (x_fold, y_fold) in enumerate(zip(x_folds, y_folds)):
-        data = np.stack(np.delete(x_folds, k))
-        labels = np.stack(np.delete(y_folds, k))
+        data = np.concatenate((np.delete(np.asarray(x_folds, dtype=object), k)))
+        labels = np.concatenate((np.delete(np.asarray(y_folds, dtype=object), k)))
         estimator.fit(data, labels)
-        score = scoring(y_fold, estimator.predict(x_fold))
+        score = scoring(estimator.predict(x_fold), y_fold)
         validation_scores.append(score)
 
     validation_scores = np.array(validation_scores)
