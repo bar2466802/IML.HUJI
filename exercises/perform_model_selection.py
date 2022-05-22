@@ -144,35 +144,34 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
     data, labels = datasets.load_diabetes(return_X_y=True, as_frame=True)
+    train_proportion = 50 / len(data)
+    train_X, train_y, test_X, test_Y = split_train_test(data, labels, train_proportion)
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
     title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
     compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, 500), k_fold=True, fig_title=title)
     title = "Train and validation errors as a function of the tested regularization parameter value"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, 500), k_fold=False, fig_title=title)
-    # scores_lasso, scores_ridge = [], []
-    # for k in np.linspace(1e-5, 5, 500):
-    #     # lasso
-    #     lasso = Lasso(alpha=k)
-    #     train_score, validation_score = cross_validate(estimator=lasso, X=data.to_numpy(), y=labels.to_numpy(),
-    #                                                    scoring=mean_square_error)
-    #     scores_lasso.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
-    #     # ridge
-    #     ridge = RidgeRegression(lam=k)
-    #     train_score, validation_score = cross_validate(estimator=ridge, X=data.to_numpy(), y=labels.to_numpy(),
-    #                                                    scoring=mean_square_error)
-    #     scores_ridge.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
-    #
-    # lasso_df = pd.DataFrame(scores_lasso)
-    # ridge_df = pd.DataFrame(scores_ridge)
-    # titles = ["Lasso", "Ridge"]
-    # fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.01, vertical_spacing=.09)
-    # add_subplot(fig, lasso_df)
-    # add_subplot(fig, ridge_df, row=1, col=2)
-    # fig.show()
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 2.5, 500), k_fold=False, fig_title=title)
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
+    print("Answers for Question 8:")
+    ridge = RidgeRegression(0.5)
+    ridge.fit(train_X.to_numpy(), train_y.to_numpy())
+    test_score = mean_square_error(ridge.predict(test_X.to_numpy()), test_Y.to_numpy())
+    form = "{0:.3g}"
+    print("Test error score of Ridge model: " + str(form.format(test_score)))
 
+    lasso = Lasso(0.5)
+    lasso.fit(train_X, train_y)
+    test_score = mean_square_error(lasso.predict(test_X), test_Y.to_numpy())
+    form = "{0:.3g}"
+    print("Test error score of Lasso model: " + str(form.format(test_score)))
+
+    linear_reg = LinearRegression()
+    linear_reg.fit(train_X.to_numpy(), train_y.to_numpy())
+    test_score = mean_square_error(linear_reg.predict(test_X.to_numpy()), test_Y.to_numpy())
+    form = "{0:.3g}"
+    print("Test error score of Least Squares model: " + str(form.format(test_score)))
 
 if __name__ == '__main__':
     np.random.seed(0)
