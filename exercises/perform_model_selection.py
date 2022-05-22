@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn import datasets
+from IMLearn import BaseEstimator
 from IMLearn.metrics import mean_square_error
 from IMLearn.utils import split_train_test
 import matplotlib.pyplot as plt
@@ -90,50 +91,78 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
 
 
 def add_subplot(fig, df, row=1, col=1):
-    fig.append_trace(go.Scatter(x=df['k'], y=df['validation_score'], mode="lines+markers",
+    fig.append_trace(go.Scatter(x=df['k'], y=df['validation_score'], mode="lines",
                                 name='lasso validation score'), row=row, col=col)
-    fig.append_trace(go.Scatter(x=df['k'], y=df['train_score'], mode="lines+markers",
+    fig.append_trace(go.Scatter(x=df['k'], y=df['train_score'], mode="lines",
                                 name='lasso train score'), row=row, col=col)
     fig.update_xaxes(title_text="k", row=row, col=col)
     fig.update_yaxes(title_text="Score", row=row, col=col)
 
 
-def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
-                   k_fold: bool = False, fig_title: str = ""):
-    scores_lasso, scores_ridge = [], []
+# def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
+#                    k_fold: bool = False, fig_title: str = ""):
+#     scores_lasso, scores_ridge = [], []
+#     for k in k_range:
+#         # lasso
+#         lasso = Lasso(alpha=k)
+#         # ridge
+#         ridge = RidgeRegression(lam=k)
+#         if k_fold:
+#             lasso_train, lasso_validation = cross_validate(estimator=lasso, X=X.to_numpy(), y=y.to_numpy(),
+#                                                            scoring=mean_square_error)
+#             ridge_train, ridge_validation = cross_validate(estimator=ridge, X=X.to_numpy(), y=y.to_numpy(),
+#                                                            scoring=mean_square_error)
+#         else:
+#             train_proportion = n_samples / len(X)
+#             train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
+#             # Get train and validation scores for lasso
+#             lasso.fit(train_X, train_y)
+#             lasso_train = mean_square_error(lasso.predict(train_X), train_y)
+#             lasso_validation = mean_square_error(lasso.predict(test_X), test_Y)
+#             # Get train and validation scores for ridge
+#             ridge.fit(train_X, train_y)
+#             ridge_train = mean_square_error(ridge.predict(train_X), train_y)
+#             ridge_validation = mean_square_error(ridge.predict(test_X), test_Y)
+#
+#         scores_lasso.append({'train_score': lasso_train, 'validation_score': lasso_validation, 'k': k})
+#         scores_ridge.append({'train_score': ridge_train, 'validation_score': ridge_validation, 'k': k})
+#
+#     lasso_df = pd.DataFrame(scores_lasso)
+#     ridge_df = pd.DataFrame(scores_ridge)
+#     titles = ["Lasso", "Ridge"]
+#     fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
+#     add_subplot(fig, lasso_df)
+#     add_subplot(fig, ridge_df, row=1, col=2)
+#     fig.update_layout(title=fig_title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
+#     fig.show()
+
+
+def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
+               k_fold: bool = False, row: int = 1, col: int = 1):
+    scores = []
     for k in k_range:
-        # lasso
-        lasso = Lasso(alpha=k)
-        # ridge
-        ridge = RidgeRegression(lam=k)
+        if model_name == "Lasso":
+            # lasso
+            estimator = Lasso(alpha=k)
+        else:
+            # ridge
+            estimator = RidgeRegression(lam=k)
+
         if k_fold:
-            lasso_train, lasso_validation = cross_validate(estimator=lasso, X=X.to_numpy(), y=y.to_numpy(),
-                                                           scoring=mean_square_error)
-            ridge_train, ridge_validation = cross_validate(estimator=ridge, X=X.to_numpy(), y=y.to_numpy(),
+            train_score, validation_score = cross_validate(estimator=estimator, X=X.to_numpy(), y=y.to_numpy(),
                                                            scoring=mean_square_error)
         else:
             train_proportion = n_samples / len(X)
             train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
-            # Get train and validation scores for lasso
-            lasso.fit(train_X, train_y)
-            lasso_train = mean_square_error(lasso.predict(train_X), train_y)
-            lasso_validation = mean_square_error(lasso.predict(test_X), test_Y)
-            # Get train and validation scores for ridge
-            ridge.fit(train_X, train_y)
-            ridge_train = mean_square_error(ridge.predict(train_X), train_y)
-            ridge_validation = mean_square_error(ridge.predict(test_X), test_Y)
+            # Get train and validation scores
+            estimator.fit(train_X, train_y)
+            train_score = mean_square_error(estimator.predict(train_X), train_y.to_numpy())
+            validation_score = mean_square_error(estimator.predict(test_X), test_Y.to_numpy())
 
-        scores_lasso.append({'train_score': lasso_train, 'validation_score': lasso_validation, 'k': k})
-        scores_ridge.append({'train_score': ridge_train, 'validation_score': ridge_validation, 'k': k})
+        scores.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
 
-    lasso_df = pd.DataFrame(scores_lasso)
-    ridge_df = pd.DataFrame(scores_ridge)
-    titles = ["Lasso", "Ridge"]
-    fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
-    add_subplot(fig, lasso_df)
-    add_subplot(fig, ridge_df, row=1, col=2)
-    fig.update_layout(title=fig_title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
-    fig.show()
+    df = pd.DataFrame(scores)
+    add_subplot(fig, df, row, col)
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -155,12 +184,25 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     train_X, train_y, test_X, test_Y = split_train_test(data, labels, train_proportion)
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
+    # Check what is the best range for the Hyperparameters
+    titles = ["Lasso", "Ridge"]
+    fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
     title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 50, 6000), n_samples=n_samples, k_fold=True,
-                   fig_title=title)
+    test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=np.linspace(1e-5, 5, n_evaluations),
+               n_samples=n_samples, k_fold=True)
+    test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=np.linspace(1e-5, 50, n_evaluations),
+               n_samples=n_samples, k_fold=True, row=1, col=2)
+    fig.update_layout(title=title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
+    fig.show()
+    # Test the best range of the Hyperparameters
     title = "Train and validation errors as a function of the tested regularization parameter value"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 2.5, n_evaluations), n_samples=n_samples, k_fold=False,
-                   fig_title=title)
+    fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
+    test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=np.linspace(1e-5, 2.5, n_evaluations),
+               n_samples=n_samples, k_fold=False)
+    test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=np.linspace(1e-5, 30, n_evaluations),
+               n_samples=n_samples, k_fold=False, row=1, col=2)
+    fig.update_layout(title=title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
+    fig.show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     print("Answers for Question 8:")
