@@ -1,3 +1,10 @@
+#################################################################
+# FILE : perform_model_selection.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 5
+# DESCRIPTION: Compare Ridge, Lasso and Linear Regression models
+#################################################################
+
 from __future__ import annotations
 import numpy as np
 import pandas as pd
@@ -149,7 +156,7 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
     title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, n_evaluations), n_samples=n_samples, k_fold=True,
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 50, 6000), n_samples=n_samples, k_fold=True,
                    fig_title=title)
     title = "Train and validation errors as a function of the tested regularization parameter value"
     compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 2.5, n_evaluations), n_samples=n_samples, k_fold=False,
