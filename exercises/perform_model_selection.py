@@ -29,9 +29,9 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     # Question 1 - Generate dataset for model f(x)=(x+3)(x+2)(x+1)(x-1)(x-2) + eps for eps Gaussian noise
     # and split into training- and testing portions
     response = lambda x: (x + 3) * (x + 2) * (x + 1) * (x - 1) * (x - 2)
-    X = np.linspace(-1.2, 2, 100)
+    X = np.linspace(-1.2, 2, n_samples)
     y = pd.Series(response(X))
-    eps = np.random.normal(0, noise)
+    eps = np.random.normal(0, noise, n_samples)
     y_ = pd.Series(y + eps)
     X = pd.DataFrame(X)
     # Split X and noisy y to train and test
@@ -39,8 +39,8 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
 
     plt.title("Scatter plot of noiseless, train and test sets \n n_samples = " + str(n_samples)
               + " , noise = " + str(noise))
-    plt.xlabel("Y")
-    plt.ylabel("X")
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.scatter(train_X, train_y, c='b', marker='x', label='Train')
     plt.scatter(test_X, test_Y, c='r', marker='.', label='Test')
     plt.scatter(X, y, c='pink', marker='*', label='Noiseless')
@@ -53,7 +53,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     for k in range(11):
         poly_model = PolynomialFitting(k)
         train_score, validation_score = cross_validate(estimator=poly_model, X=train_X.to_numpy(), y=train_y.to_numpy(),
-                                                       scoring=poly_model.loss)
+                                                       scoring=mean_square_error)
         scores.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
 
     scores_df = pd.DataFrame(scores)
@@ -61,8 +61,10 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
               + " , noise = " + str(noise))
     plt.xlabel("k values (polynomial degree)")
     plt.ylabel("Average errors")
-    plt.scatter(scores_df['k'], scores_df['train_score'], c='b', marker='x', label='Average train error')
-    plt.scatter(scores_df['k'], scores_df['validation_score'], c='r', marker='.', label='Average validation error')
+    plt.plot(scores_df['k'], scores_df['train_score'], c='b', label='Average train error')
+    plt.plot(scores_df['k'], scores_df['validation_score'], c='r', label='Average validation error')
+    # plt.scatter(scores_df['k'], scores_df['train_score'], c='b', marker='x', label='Average train error')
+    # plt.scatter(scores_df['k'], scores_df['validation_score'], c='r', marker='.', label='Average validation error')
     plt.legend(loc='upper left')
     plt.show()
     plt.clf()
@@ -73,11 +75,58 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     print('Best k-degree is: ' + str(best_k))
     best_poly_model = PolynomialFitting(best_k)
     best_poly_model.fit(train_X.to_numpy(), train_y.to_numpy())
-    test_error = best_poly_model.loss(test_X.to_numpy(), test_Y.to_numpy())
-    form = "{:.2f}"
+    y_pred = best_poly_model.predict(test_X.to_numpy())
+    test_error = mean_square_error(test_Y.to_numpy(), y_pred)
+    form = "{0:.3g}"
     print('Test error over entire train set: ' + str(form.format(test_error)))
     print('Validation error previously achieved with 5-fold cross-validation: ' + str(
         form.format(float(best_model['validation_score']))))
+
+
+def add_subplot(fig, df, row=1, col=1):
+    fig.append_trace(go.Scatter(x=df['k'], y=df['validation_score'], mode="lines+markers",
+                                name='lasso validation score'), row=row, col=col)
+    fig.append_trace(go.Scatter(x=df['k'], y=df['train_score'], mode="lines+markers",
+                                name='lasso train score'), row=row, col=col)
+    fig.update_xaxes(title_text="k", row=row, col=col)
+    fig.update_yaxes(title_text="Score", row=row, col=col)
+
+
+def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, k_fold: bool = False, fig_title: str = ""):
+    scores_lasso, scores_ridge = [], []
+    for k in k_range:
+        # lasso
+        lasso = Lasso(alpha=k)
+        # ridge
+        ridge = RidgeRegression(lam=k)
+        if k_fold:
+            lasso_train, lasso_validation = cross_validate(estimator=lasso, X=X.to_numpy(), y=y.to_numpy(),
+                                                           scoring=mean_square_error)
+            ridge_train, ridge_validation = cross_validate(estimator=ridge, X=X.to_numpy(), y=y.to_numpy(),
+                                                           scoring=mean_square_error)
+        else:
+            train_proportion = 50 / len(X)
+            train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
+            # Get train and validation scores for lasso
+            lasso.fit(train_X, train_y)
+            lasso_train = mean_square_error(lasso.predict(train_X), train_y)
+            lasso_validation = mean_square_error(lasso.predict(test_X), test_Y)
+            # Get train and validation scores for ridge
+            ridge.fit(train_X, train_y)
+            ridge_train = mean_square_error(ridge.predict(train_X), train_y)
+            ridge_validation = mean_square_error(ridge.predict(test_X), test_Y)
+
+        scores_lasso.append({'train_score': lasso_train, 'validation_score': lasso_validation, 'k': k})
+        scores_ridge.append({'train_score': ridge_train, 'validation_score': ridge_validation, 'k': k})
+
+    lasso_df = pd.DataFrame(scores_lasso)
+    ridge_df = pd.DataFrame(scores_ridge)
+    titles = ["Lasso", "Ridge"]
+    fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
+    add_subplot(fig, lasso_df)
+    add_subplot(fig, ridge_df, row=1, col=2)
+    fig.update_layout(title=fig_title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
+    fig.show()
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -95,24 +144,34 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
     data, labels = datasets.load_diabetes(return_X_y=True, as_frame=True)
-    train_proportion = 50 / len(data)
-    train_X, train_y, test_X, test_Y = split_train_test(data, labels, train_proportion)
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    scores_lasso = []
-    scores_ridge = []
-    for k in np.linspace(0, 555, 5000):
-        lasso = Lasso(alpha=k)
-        train_score, validation_score = cross_validate(estimator=lasso, X=data.to_numpy(), y=labels.to_numpy(),
-                                                       scoring=mean_square_error)
-        scores_lasso.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
-        ridge = RidgeRegression(lam=k)
-        train_score, validation_score = cross_validate(estimator=ridge, X=data.to_numpy(), y=labels.to_numpy(),
-                                                       scoring=mean_square_error)
-        scores_ridge.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
+    title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, 500), k_fold=True, fig_title=title)
+    title = "Train and validation errors as a function of the tested regularization parameter value"
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, 500), k_fold=False, fig_title=title)
+    # scores_lasso, scores_ridge = [], []
+    # for k in np.linspace(1e-5, 5, 500):
+    #     # lasso
+    #     lasso = Lasso(alpha=k)
+    #     train_score, validation_score = cross_validate(estimator=lasso, X=data.to_numpy(), y=labels.to_numpy(),
+    #                                                    scoring=mean_square_error)
+    #     scores_lasso.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
+    #     # ridge
+    #     ridge = RidgeRegression(lam=k)
+    #     train_score, validation_score = cross_validate(estimator=ridge, X=data.to_numpy(), y=labels.to_numpy(),
+    #                                                    scoring=mean_square_error)
+    #     scores_ridge.append({'train_score': train_score, 'validation_score': validation_score, 'k': k})
+    #
+    # lasso_df = pd.DataFrame(scores_lasso)
+    # ridge_df = pd.DataFrame(scores_ridge)
+    # titles = ["Lasso", "Ridge"]
+    # fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.01, vertical_spacing=.09)
+    # add_subplot(fig, lasso_df)
+    # add_subplot(fig, ridge_df, row=1, col=2)
+    # fig.show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
-
 
 
 if __name__ == '__main__':
@@ -133,4 +192,3 @@ if __name__ == '__main__':
 
     # Part 2 - Choosing Regularization Parameters Using Cross Validation
     select_regularization_parameter()
-
