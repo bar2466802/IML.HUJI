@@ -214,13 +214,15 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     ridge.fit(train_X.to_numpy(), train_y.to_numpy())
     test_score = mean_square_error(ridge.predict(test_X.to_numpy()), test_Y.to_numpy())
     form = "{0:.2f}"
-    print("Test error score of Ridge model: " + str(form.format(test_score)))
+    print("The best lambda for Ridge model was: " + str(form.format(best_lam)))
+    print("Test error score of Ridge model: " + str(form.format(test_score)) + "\n")
 
     best_alpha = ridge_k_rng[np.argmin(ridge_df['validation_score'])]
     lasso = Lasso(alpha=best_alpha)
     lasso.fit(train_X, train_y)
     test_score = mean_square_error(lasso.predict(test_X), test_Y.to_numpy())
-    print("Test error score of Lasso model: " + str(form.format(test_score)))
+    print("The best alpha for Lasso model was: " + str(form.format(best_alpha)))
+    print("Test error score of Lasso model: " + str(form.format(test_score)) + "\n")
 
     linear_reg = LinearRegression()
     linear_reg.fit(train_X.to_numpy(), train_y.to_numpy())
