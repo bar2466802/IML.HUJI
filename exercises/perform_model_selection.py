@@ -138,7 +138,7 @@ def add_subplot(fig, df, row=1, col=1):
 
 
 def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
-               k_fold: bool = False, row: int = 1, col: int = 1):
+               k_fold: bool = False, row: int = 1, col: int = 1) -> pd.DataFrame:
     scores = []
     for k in k_range:
         if model_name == "Lasso":
@@ -163,6 +163,7 @@ def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarra
 
     df = pd.DataFrame(scores)
     add_subplot(fig, df, row, col)
+    return df
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -197,22 +198,26 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     # Test the best range of the Hyperparameters
     title = "Train and validation errors as a function of the tested regularization parameter value"
     fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
-    test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=np.linspace(1e-5, 2.5, n_evaluations),
-               n_samples=n_samples, k_fold=False)
-    test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=np.linspace(1e-5, 30, n_evaluations),
-               n_samples=n_samples, k_fold=False, row=1, col=2)
+    lasso_k_rng = np.linspace(1e-5, 2.5, n_evaluations)
+    lasso_df = test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=lasso_k_rng, n_samples=n_samples,
+                          k_fold=False)
+    ridge_k_rng = np.linspace(1e-5, 30, n_evaluations)
+    ridge_df = test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=ridge_k_rng, n_samples=n_samples,
+                          k_fold=False, row=1, col=2)
     fig.update_layout(title=title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
     fig.show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     print("Answers for Question 8:")
-    ridge = RidgeRegression(0.5)
+    best_lam = lasso_k_rng[np.argmin(lasso_df['validation_score'])]
+    ridge = RidgeRegression(lam=best_lam)
     ridge.fit(train_X.to_numpy(), train_y.to_numpy())
     test_score = mean_square_error(ridge.predict(test_X.to_numpy()), test_Y.to_numpy())
     form = "{0:.2f}"
     print("Test error score of Ridge model: " + str(form.format(test_score)))
 
-    lasso = Lasso(0.5)
+    best_alpha = ridge_k_rng[np.argmin(ridge_df['validation_score'])]
+    lasso = Lasso(alpha=best_alpha)
     lasso.fit(train_X, train_y)
     test_score = mean_square_error(lasso.predict(test_X), test_Y.to_numpy())
     print("Test error score of Lasso model: " + str(form.format(test_score)))
