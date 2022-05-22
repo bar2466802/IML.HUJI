@@ -3,6 +3,8 @@ from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
 from sklearn.linear_model import Ridge
+from numpy.linalg import pinv
+from numpy.linalg import inv
 
 class RidgeRegression(BaseEstimator):
     """
@@ -42,7 +44,7 @@ class RidgeRegression(BaseEstimator):
         self.include_intercept_ = include_intercept
         self.lam_ = lam
         # TODO: remove before submission
-        self.model = Ridge(alpha=lam)
+        self.model = Ridge(alpha=lam, fit_intercept=True)
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -62,6 +64,14 @@ class RidgeRegression(BaseEstimator):
         """
         self.model.fit(X, y)
 
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
+
+        lambda_matrix = np.identity(X.shape[1])
+        lambda_matrix[0, 0] = 0
+        lambda_matrix = self.lam_ * lambda_matrix
+        self.coefs_ = inv(X.T @ X + lambda_matrix) @ X.T @ y
+
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict responses for given samples using fitted estimator
@@ -76,7 +86,11 @@ class RidgeRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return self.model.predict(X)
+        # return self.model.predict(X)
+        test = self.model.predict(X)
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
+        return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -95,4 +109,6 @@ class RidgeRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        return self.model.score(X, y)
+        from ...metrics import mean_square_error
+        error_test = self.model.score(X, y)
+        return mean_square_error(y, self._predict(X))

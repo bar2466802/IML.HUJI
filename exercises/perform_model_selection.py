@@ -63,8 +63,6 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     plt.ylabel("Average errors")
     plt.plot(scores_df['k'], scores_df['train_score'], c='b', label='Average train error')
     plt.plot(scores_df['k'], scores_df['validation_score'], c='r', label='Average validation error')
-    # plt.scatter(scores_df['k'], scores_df['train_score'], c='b', marker='x', label='Average train error')
-    # plt.scatter(scores_df['k'], scores_df['validation_score'], c='r', marker='.', label='Average validation error')
     plt.legend(loc='upper left')
     plt.show()
     plt.clf()
@@ -77,8 +75,9 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     best_poly_model.fit(train_X.to_numpy(), train_y.to_numpy())
     y_pred = best_poly_model.predict(test_X.to_numpy())
     test_error = mean_square_error(test_Y.to_numpy(), y_pred)
-    form = "{0:.3g}"
-    print('Test error over entire train set: ' + str(form.format(test_error)))
+    # form = "{0:.3g}"
+    form = "{0:.2f}"
+    print('Test error over entire train set with k-degree = ' + str(best_k) + ': ' + str(form.format(test_error)))
     print('Validation error previously achieved with 5-fold cross-validation: ' + str(
         form.format(float(best_model['validation_score']))))
 
@@ -92,7 +91,8 @@ def add_subplot(fig, df, row=1, col=1):
     fig.update_yaxes(title_text="Score", row=row, col=col)
 
 
-def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, k_fold: bool = False, fig_title: str = ""):
+def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
+                   k_fold: bool = False, fig_title: str = ""):
     scores_lasso, scores_ridge = [], []
     for k in k_range:
         # lasso
@@ -105,7 +105,7 @@ def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, k_fold: bo
             ridge_train, ridge_validation = cross_validate(estimator=ridge, X=X.to_numpy(), y=y.to_numpy(),
                                                            scoring=mean_square_error)
         else:
-            train_proportion = 50 / len(X)
+            train_proportion = n_samples / len(X)
             train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
             # Get train and validation scores for lasso
             lasso.fit(train_X, train_y)
@@ -144,41 +144,41 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
     data, labels = datasets.load_diabetes(return_X_y=True, as_frame=True)
-    train_proportion = 50 / len(data)
+    train_proportion = n_samples / len(data)
     train_X, train_y, test_X, test_Y = split_train_test(data, labels, train_proportion)
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
     title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, 500), k_fold=True, fig_title=title)
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 5, n_evaluations), n_samples=n_samples, k_fold=True,
+                   fig_title=title)
     title = "Train and validation errors as a function of the tested regularization parameter value"
-    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 2.5, 500), k_fold=False, fig_title=title)
+    compare_models(X=data, y=labels, k_range=np.linspace(1e-5, 2.5, n_evaluations), n_samples=n_samples, k_fold=False,
+                   fig_title=title)
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     print("Answers for Question 8:")
     ridge = RidgeRegression(0.5)
     ridge.fit(train_X.to_numpy(), train_y.to_numpy())
     test_score = mean_square_error(ridge.predict(test_X.to_numpy()), test_Y.to_numpy())
-    form = "{0:.3g}"
+    form = "{0:.2f}"
     print("Test error score of Ridge model: " + str(form.format(test_score)))
 
     lasso = Lasso(0.5)
     lasso.fit(train_X, train_y)
     test_score = mean_square_error(lasso.predict(test_X), test_Y.to_numpy())
-    form = "{0:.3g}"
     print("Test error score of Lasso model: " + str(form.format(test_score)))
 
     linear_reg = LinearRegression()
     linear_reg.fit(train_X.to_numpy(), train_y.to_numpy())
     test_score = mean_square_error(linear_reg.predict(test_X.to_numpy()), test_Y.to_numpy())
-    form = "{0:.3g}"
     print("Test error score of Least Squares model: " + str(form.format(test_score)))
+
 
 if __name__ == '__main__':
     np.random.seed(0)
     # Part 1 - Cross Validation For Selecting Polynomial Degree
-    print("Question 3 Answer:")
-    print("Question 4 Answer, n_samples = 100, noise = 5:")
-    select_polynomial_degree()
+    print("Question 3 Answer, n_samples = 100, noise = 5:")
+    select_polynomial_degree(n_samples=100, noise=5)
     print("")
     # Question 4 - Repeat the questions above but using a noise level of 0
     print("Question 4 Answer, n_samples = 100, noise = 0:")
