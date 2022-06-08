@@ -99,44 +99,6 @@ def add_subplot(fig, df, row=1, col=1):
     fig.update_yaxes(title_text="Score", row=row, col=col)
 
 
-# def compare_models(X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
-#                    k_fold: bool = False, fig_title: str = ""):
-#     scores_lasso, scores_ridge = [], []
-#     for k in k_range:
-#         # lasso
-#         lasso = Lasso(alpha=k)
-#         # ridge
-#         ridge = RidgeRegression(lam=k)
-#         if k_fold:
-#             lasso_train, lasso_validation = cross_validate(estimator=lasso, X=X.to_numpy(), y=y.to_numpy(),
-#                                                            scoring=mean_square_error)
-#             ridge_train, ridge_validation = cross_validate(estimator=ridge, X=X.to_numpy(), y=y.to_numpy(),
-#                                                            scoring=mean_square_error)
-#         else:
-#             train_proportion = n_samples / len(X)
-#             train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
-#             # Get train and validation scores for lasso
-#             lasso.fit(train_X, train_y)
-#             lasso_train = mean_square_error(lasso.predict(train_X), train_y)
-#             lasso_validation = mean_square_error(lasso.predict(test_X), test_Y)
-#             # Get train and validation scores for ridge
-#             ridge.fit(train_X, train_y)
-#             ridge_train = mean_square_error(ridge.predict(train_X), train_y)
-#             ridge_validation = mean_square_error(ridge.predict(test_X), test_Y)
-#
-#         scores_lasso.append({'train_score': lasso_train, 'validation_score': lasso_validation, 'k': k})
-#         scores_ridge.append({'train_score': ridge_train, 'validation_score': ridge_validation, 'k': k})
-#
-#     lasso_df = pd.DataFrame(scores_lasso)
-#     ridge_df = pd.DataFrame(scores_ridge)
-#     titles = ["Lasso", "Ridge"]
-#     fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
-#     add_subplot(fig, lasso_df)
-#     add_subplot(fig, ridge_df, row=1, col=2)
-#     fig.update_layout(title=fig_title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
-#     fig.show()
-
-
 def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarray, n_samples: int = 50,
                k_fold: bool = False, row: int = 1, col: int = 1) -> pd.DataFrame:
     scores = []
@@ -153,18 +115,6 @@ def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarra
         if k_fold:
             train_score, validation_score = cross_validate(estimator=estimator, X=X.to_numpy(), y=y.to_numpy(),
                                                            scoring=mean_square_error)
-            # from sklearn.model_selection import cross_validate as cross_val
-            # from sklearn.metrics import make_scorer
-            #
-            # scores_sklearn = cross_val(estimator, X.to_numpy(), y.to_numpy(),
-            #                            scoring=make_scorer(mean_square_error, greater_is_better=False),
-            #                            return_train_score=True, cv=5)
-            # a = scores_sklearn['test_score'].mean()
-            # b = scores_sklearn['train_score'].mean()
-            # c = abs(a) - validation_score
-            # d = abs(b) - train_score
-            # validation_score = abs(a)
-            # train_score = abs(b)
 
         else:
             train_proportion = n_samples / len(X)
