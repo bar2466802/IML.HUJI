@@ -146,11 +146,26 @@ def test_model(fig, model_name, X: np.ndarray, y: np.ndarray, k_range: np.ndarra
             estimator = Lasso(alpha=k)
         else:
             # ridge
-            estimator = RidgeRegression(lam=k)
+            # estimator = RidgeRegression(lam=k)
+            from sklearn.linear_model import Ridge
+            estimator = Ridge(alpha=k)
 
         if k_fold:
             train_score, validation_score = cross_validate(estimator=estimator, X=X.to_numpy(), y=y.to_numpy(),
                                                            scoring=mean_square_error)
+            # from sklearn.model_selection import cross_validate as cross_val
+            # from sklearn.metrics import make_scorer
+            #
+            # scores_sklearn = cross_val(estimator, X.to_numpy(), y.to_numpy(),
+            #                            scoring=make_scorer(mean_square_error, greater_is_better=False),
+            #                            return_train_score=True, cv=5)
+            # a = scores_sklearn['test_score'].mean()
+            # b = scores_sklearn['train_score'].mean()
+            # c = abs(a) - validation_score
+            # d = abs(b) - train_score
+            # validation_score = abs(a)
+            # train_score = abs(b)
+
         else:
             train_proportion = n_samples / len(X)
             train_X, train_y, test_X, test_Y = split_train_test(X, y, train_proportion)
@@ -189,10 +204,12 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     titles = ["Lasso", "Ridge"]
     fig = make_subplots(subplot_titles=titles, rows=1, cols=2, horizontal_spacing=0.05, vertical_spacing=.09)
     title = "CV for different values of the regularization parameter for Ridge and Lasso regressions"
-    test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=np.linspace(1e-5, 5, n_evaluations),
-               n_samples=n_samples, k_fold=True)
-    test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=np.linspace(1e-5, 50, n_evaluations),
-               n_samples=n_samples, k_fold=True, row=1, col=2)
+    lasso_k_rng = np.linspace(1e-5, 3, n_evaluations)
+    # lasso_k_rng = 10 ** np.linspace(-3, 2, 100)
+    test_model(fig=fig, model_name=titles[0], X=data, y=labels, k_range=lasso_k_rng, n_samples=n_samples, k_fold=True)
+    ridge_k_rng = np.linspace(1e-5, 50, n_evaluations)
+    test_model(fig=fig, model_name=titles[1], X=data, y=labels, k_range=ridge_k_rng, n_samples=n_samples, k_fold=True,
+               row=1, col=2)
     fig.update_layout(title=title, title_pad_b=100, title_pad_l=15, margin=dict(b=40))
     fig.show()
     # Test the best range of the Hyperparameters

@@ -1,18 +1,8 @@
-#################################################################
-# FILE : linear_regression.py
-# WRITER : Bar Melinarskiy
-# EXERCISE : Intro to Machine Learning - 67577 - Exercise 2
-# DESCRIPTION: Implement linear regression model
-#################################################################
-
 from __future__ import annotations
 from typing import NoReturn
 from ...base import BaseEstimator
 import numpy as np
-import pandas as pd
 from numpy.linalg import pinv
-
-from ...metrics import mean_square_error
 
 
 class LinearRegression(BaseEstimator):
@@ -59,17 +49,9 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        # Check if we need to convert to array
-        x_arr = X
-        if type(X) == pd.DataFrame:
-            x_arr = X.to_numpy()
-
-        # If we need to include intercept then add a zero-th coordinate to every sample xi = (1, x1, ... , xd)
         if self.include_intercept_:
-            new_column = np.full(x_arr.shape[0], 1)
-            np.insert(x_arr, 0, new_column, axis=1)
-        moore_penrose_pseudo_inv = np.linalg.pinv(x_arr)
-        self.coefs_ = moore_penrose_pseudo_inv @ y
+            X = np.c_[np.ones(len(X)), X]
+        self.coefs_ = pinv(X) @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -85,6 +67,8 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -104,5 +88,5 @@ class LinearRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        return mean_square_error(y, self.predict(X))
-
+        from ...metrics import mean_square_error
+        return mean_square_error(y, self._predict(X))
