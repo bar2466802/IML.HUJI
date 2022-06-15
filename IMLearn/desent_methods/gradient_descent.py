@@ -39,6 +39,7 @@ class GradientDescent:
         Callable function should receive as input a GradientDescent instance, and any additional
         arguments specified in the `GradientDescent.fit` function
     """
+
     def __init__(self,
                  learning_rate: BaseLR = FixedLR(1e-3),
                  tol: float = 1e-5,
@@ -119,6 +120,11 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
+        sol = X[np.random.randint(low=0, high=len(X))]
+        weights = f()
+        vals = np.zeros()
+        delta = np.zeros()
         for idx in range(self.max_iter_):
-            self.callback_()
 
+            gradient = f.compute_jacobian()  # Get the current gradient
+            self.callback_(self, f.weights, vals, gradient, idx, self.learning_rate_.lr_step(), delta)
