@@ -119,4 +119,6 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        for idx in range(self.max_iter_):
+            self.callback_()
+
