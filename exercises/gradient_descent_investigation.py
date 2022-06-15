@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Callable, Type
+from typing import Tuple, List, Callable, Type, NoReturn
 
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
@@ -46,39 +46,79 @@ def plot_descent_path(module: Type[BaseModule],
     fig = plot_descent_path(IMLearn.desent_methods.modules.L1, np.ndarray([[1,1],[0,0]]))
     fig.show()
     """
+
     def predict_(w):
         return np.array([module(weights=wi).compute_output() for wi in w])
 
     from utils import decision_surface
     return go.Figure([decision_surface(predict_, xrange=xrange, yrange=yrange, density=70, showscale=False),
-                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1], mode="markers+lines", marker_color="black")],
+                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1], mode="markers+lines",
+                                 marker_color="black")],
                      layout=go.Layout(xaxis=dict(range=xrange),
                                       yaxis=dict(range=yrange),
                                       title=f"GD Descent Path {title}"))
 
 
-def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarray], List[np.ndarray]]:
+def get_gd_state_recorder_callback(module_type: Type[BaseModule]) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Callback generator for the GradientDescent class, recording the objective's value and parameters at each iteration
 
     Return:
     -------
-    callback: Callable[[], None]
-        Callback function to be passed to the GradientDescent class, recoding the objective's value and parameters
-        at each iteration of the algorithm
-
     values: List[np.ndarray]
         Recorded objective values
 
     weights: List[np.ndarray]
         Recorded parameters
     """
-    raise NotImplementedError()
+    value = [], values = []
+    descent_paths = [], descent_path = []
+
+    def gd_callback(solver: GradientDescent, weights: np.ndarray, val: np.ndarray, grad: np.ndarray, t: int,
+                    eta: float, delta: float) -> NoReturn:
+        """
+            Plot the descent path of the gradient descent algorithm
+
+            Parameters:
+            -----------
+            - solver: GradientDescent
+                self, the current instance of GradientDescent
+            - weights: ndarray of shape specified by module's weights
+                Current weights of objective
+            - val: ndarray of shape specified by module's compute_output function
+                Value of objective function at current point, over given data X, y
+            - grad:  ndarray of shape specified by module's compute_jacobian function
+                Module's jacobian with respect to the weights and at current point, over given data X,y
+            - t: int
+                Current GD iteration
+            - eta: float
+                Learning rate used at current iteration
+            - delta: float
+                Euclidean norm of w^(t)-w^(t-1)
+        """
+        descent_path.append(weights)
+        value.append(val)
+
+    for rate in learning_rates:
+        module = module_type(weights=w_0)
+        fixed_lr = FixedLR(base_lr=rate)
+        gd = GradientDescent(learning_rate=fixed_lr, callback=gd_callback)
+        gd.fit(X=None, y=None, f=module)
+        descent_paths.append(descent_path)
+        values.append(value)
+
+    return descent_paths, values
 
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                  etas: Tuple[float] = (1, .1, .01, .001)):
-    raise NotImplementedError()
+    modules = [L1, L2]
+    titles = ["L1", "L2"]
+    for i, module in enumerate(modules):
+        descent_paths, values = get_gd_state_recorder_callback(module_type=module)
+        figs = [plot_descent_path(module=module, descent_path=path, title=titles[i]) for path in descent_paths]
+        figs = np.array(figs)
+        go.Figure(data=figs).show()
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
