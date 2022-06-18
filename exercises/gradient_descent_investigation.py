@@ -4,6 +4,7 @@ from typing import Tuple, List, Callable, Type, NoReturn
 
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
+from plotly.subplots import make_subplots
 from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
@@ -56,10 +57,11 @@ def plot_descent_path(module: Type[BaseModule],
                                  marker_color="black")],
                      layout=go.Layout(xaxis=dict(range=xrange),
                                       yaxis=dict(range=yrange),
-                                      title=f"GD Descent Path {title}"))
+                                      title=f"GD Descent Path - {title}"))
 
 
-def get_gd_state_recorder_callback(module_type: Type[BaseModule]) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+def get_gd_state_recorder_callback(module_type: Type[BaseModule], init: np.ndarray, etas: Tuple[float]) \
+        -> Tuple[np.ndarray, np.ndarray]:
     """
     Callback generator for the GradientDescent class, recording the objective's value and parameters at each iteration
 
@@ -71,8 +73,8 @@ def get_gd_state_recorder_callback(module_type: Type[BaseModule]) -> Tuple[List[
     weights: List[np.ndarray]
         Recorded parameters
     """
-    value = [], values = []
-    descent_paths = [], descent_path = []
+    value, values = [], []
+    descent_paths, descent_path = [], []
 
     def gd_callback(solver: GradientDescent, weights: np.ndarray, val: np.ndarray, grad: np.ndarray, t: int,
                     eta: float, delta: float) -> NoReturn:
@@ -99,26 +101,40 @@ def get_gd_state_recorder_callback(module_type: Type[BaseModule]) -> Tuple[List[
         descent_path.append(weights)
         value.append(val)
 
-    for rate in learning_rates:
-        module = module_type(weights=w_0)
+    for rate in etas:
+        descent_path, value = [], []
+        module = module_type(weights=init)
         fixed_lr = FixedLR(base_lr=rate)
         gd = GradientDescent(learning_rate=fixed_lr, callback=gd_callback)
         gd.fit(X=None, y=None, f=module)
         descent_paths.append(descent_path)
         values.append(value)
 
-    return descent_paths, values
+    return np.array(descent_paths), np.array(values)
 
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                  etas: Tuple[float] = (1, .1, .01, .001)):
     modules = [L1, L2]
-    titles = ["L1", "L2"]
+    modules_titles = ["L1", "L2"]
+    titles = []
+    for i, t in enumerate(modules_titles):
+        module_title_arr = []
+        for j, eta in enumerate(etas):
+            title = "Module: " + t + ", eta: " + str(eta) + ", init: " + str(init)
+            module_title_arr.append(title)
+        titles.append(module_title_arr)
+    titles = np.array(titles)
     for i, module in enumerate(modules):
-        descent_paths, values = get_gd_state_recorder_callback(module_type=module)
-        figs = [plot_descent_path(module=module, descent_path=path, title=titles[i]) for path in descent_paths]
-        figs = np.array(figs)
-        go.Figure(data=figs).show()
+        descent_paths, values = get_gd_state_recorder_callback(module_type=module, init=init, etas=etas)
+        for j, path in enumerate(descent_paths):
+            title = titles[i][j]
+            plot_descent_path(module=module, descent_path=path, title=title).show()
+        # figs = np.array(figs)
+        # fig = make_subplots(rows=int(len(etas) / 2), cols=int(len(etas) / 2))
+        # rng = range(len(etas))
+        # fig.add_traces(figs, rows=np.repeat(rng, len(etas)), cols=np.tile(rng, len(etas)))
+        # fig.show()
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
@@ -181,5 +197,6 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     compare_fixed_learning_rates()
-    compare_exponential_decay_rates()
-    fit_logistic_regression()
+    # compare_exponential_decay_rates()
+    # fit_logistic_regression()
+    print("fin ex6!")

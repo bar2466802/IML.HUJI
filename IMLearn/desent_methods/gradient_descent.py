@@ -120,15 +120,15 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        sol = f.weights()
+        sol = f.weights
         sol_to_return, sum = sol, sol
-        best_delta = 0
+        best_delta = np.inf
         for idx in range(self.max_iter_):
             gradient = f.compute_jacobian()  # Get the current gradient
             sol_new = sol - self.learning_rate_.lr_step() * gradient
             delta = np.linalg.norm(sol_new - sol)
             sol = sol_new
-            f.weights(sol)
+            f.weights = sol
 
             if self.out_type_ == 'last':
                 sol_to_return = sol
@@ -140,7 +140,7 @@ class GradientDescent:
                 sum += sol
                 sol_to_return = sum / idx
 
-            self.callback_(solver=self, weights=f.weights(), val=f.compute_output(), grad=gradient, t=idx,
+            self.callback_(solver=self, weights=f.weights, val=f.compute_output(), grad=gradient, t=idx,
                            eta=self.learning_rate_.lr_step(), delta=delta)
             # Check the 2nd stopping condition
             if delta <= self.tol_:
