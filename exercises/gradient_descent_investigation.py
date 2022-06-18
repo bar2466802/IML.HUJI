@@ -117,37 +117,59 @@ def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e /
                                  etas: Tuple[float] = (1, .1, .01, .001)):
     modules = [L1, L2]
     modules_titles = ["L1", "L2"]
+    """
+    3.1.1 Comparing Fixed learning rates - question 1
+    Plot the descent trajectory for each of the settings described above
+    """
     titles = []
     for i, t in enumerate(modules_titles):
         module_title_arr = []
         for j, eta in enumerate(etas):
-            title = "Module: " + t + ", eta: " + str(eta) + ", init: " + str(init)
+            title = "Module - " + t + ", eta - " + str(eta)
             module_title_arr.append(title)
         titles.append(module_title_arr)
     titles = np.array(titles)
     for i, module in enumerate(modules):
         descent_paths, values = get_gd_state_recorder_callback(module_type=module, init=init, etas=etas)
-        for j, path in enumerate(descent_paths):
+        for j in range(len(descent_paths)):
+            path = descent_paths[j]
+            val = values[j]
             title = titles[i][j]
-            plot_descent_path(module=module, descent_path=path, title=title).show()
-        # figs = np.array(figs)
-        # fig = make_subplots(rows=int(len(etas) / 2), cols=int(len(etas) / 2))
-        # rng = range(len(etas))
-        # fig.add_traces(figs, rows=np.repeat(rng, len(etas)), cols=np.tile(rng, len(etas)))
-        # fig.show()
+            fig1 = plot_descent_path(module=module, descent_path=path, title=title)
+            fig1.show()
+            fig1.write_image("GD Descent Path " + title + ".png", engine='kaleido', format='png')
+
+            """
+                3.1.1 Comparing Fixed learning rates - question 3
+                For each of the modules, plot the convergence rate (i.e. the norm as a function of the GD
+                iteration) for all specified learning rates. Explain your results
+            """
+            fig2 = go.Figure(go.Scatter(x=np.array(range(len(val))), y=val, mode="markers+lines", marker_color="black"),
+                             layout=go.Layout(title=f"GD Descent Convergence Rate - {title}"))
+            fig2.show()
+            fig2.write_image("GD Descent Convergence " + title + ".png", engine='kaleido', format='png')
+
+            """
+               What is the lowest loss achieved when minimizing each of the modules? Explain the differences
+            """
+            min_loss = val.min()
+            min_loss_i = np.argmin(val)
+            form = "{:.3f}"
+            print("For " + title)
+            print("Lowest loss achieved = " + form.format(min_loss) + ", in iteration = " + str(min_loss_i))
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                     eta: float = .1,
                                     gammas: Tuple[float] = (.9, .95, .99, 1)):
     # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
-    raise NotImplementedError()
+    a = 1
 
     # Plot algorithm's convergence for the different values of gamma
-    raise NotImplementedError()
+
 
     # Plot descent path for gamma=0.95
-    raise NotImplementedError()
+
 
 
 def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
@@ -197,6 +219,6 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     compare_fixed_learning_rates()
-    # compare_exponential_decay_rates()
+    compare_exponential_decay_rates()
     # fit_logistic_regression()
     print("fin ex6!")
