@@ -288,7 +288,7 @@ def fit_logistic_regression():
     y_pred_proba = estimator.predict_proba(X_train.to_numpy())
     fpr, tpr, thresholds = roc_curve(y_train, y_pred_proba)
     score = auc(fpr, tpr)
-    data = [go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
+    data = [go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="ROC", marker_size=5,
                        hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}"),
             go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
                        name="Random Class Assignment")]
@@ -320,7 +320,6 @@ def fit_logistic_regression():
         from IMLearn.metrics import misclassification_error
         scores = []
         for lam in lambdas:
-            print(lam)
             gd = GradientDescent(learning_rate=FixedLR(base_lr=1e-4), max_iter=int(2e4))
             estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=penalty, lam=lam)
             train_score, validation_score = cross_validate(estimator=estimator, X=X_train.to_numpy(),
@@ -333,15 +332,16 @@ def fit_logistic_regression():
 
     lambdas = np.array([0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1])
 
-    for module_name, q_name in zip(["l1", "l2"], ["Q9", "Q10"]):
+    for module_name, q_name in zip(["l1", "l2"], ["Q10", "Q11"]):
         scores_df = cv_logistic_regression(module_name, lambdas)
-        plt.title("Average training and validation errors Vs. lam")
+        plt.title(module_name.upper() + ": Average training and validation errors Vs. lam")
         plt.xlabel("lam values")
         plt.ylabel("Average errors")
         plt.plot(scores_df['lam'], scores_df['train_score'], c='b', label='Average train error')
         plt.plot(scores_df['lam'], scores_df['validation_score'], c='r', label='Average validation error')
+        plt.legend(loc='upper right')
         plt.show()
-        print(q_name + ": " + "for module " + module_name)
+        print(q_name + ": " + "for module " + module_name.upper())
         best_model = scores_df[scores_df['validation_score'] == scores_df['validation_score'].min()]
         best_lam = float(best_model['lam'])
         print('Best lam is: ' + str(best_lam))

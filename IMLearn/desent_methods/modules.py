@@ -1,6 +1,6 @@
 import numpy as np
 from IMLearn import BaseModule
-
+from copy import deepcopy
 
 class L2(BaseModule):
     """
@@ -204,7 +204,7 @@ class RegularizedModule(BaseModule):
         self.include_intercept_ = include_intercept
 
         if weights is not None:
-            self.weights(weights)
+            self.weights = weights
 
     def compute_output(self, **kwargs) -> np.ndarray:
         """
@@ -252,7 +252,7 @@ class RegularizedModule(BaseModule):
         -------
         weights: ndarray of shape (n_in, n_out)
         """
-        return super().weights(self)
+        return self.weights_
 
     @weights.setter
     def weights(self, weights: np.ndarray) -> None:
@@ -269,4 +269,7 @@ class RegularizedModule(BaseModule):
         """
         self.weights_ = weights
         self.fidelity_module_.weights = weights
+        if self.include_intercept_:
+            weights = deepcopy(weights)
+            weights[0] = 0
         self.regularization_module_.weights = weights
