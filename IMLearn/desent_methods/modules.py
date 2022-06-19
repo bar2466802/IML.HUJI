@@ -204,6 +204,8 @@ class RegularizedModule(BaseModule):
         self.include_intercept_ = include_intercept
 
         if weights:
+            if self.include_intercept_:
+                weights = weights[:, 1]
             self.weights(weights)
 
     def compute_output(self, **kwargs) -> np.ndarray:

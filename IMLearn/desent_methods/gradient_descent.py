@@ -124,7 +124,7 @@ class GradientDescent:
         sol_to_return, sum = sol, sol
         best_delta = np.inf
         for idx in range(self.max_iter_):
-            gradient = f.compute_jacobian()  # Get the current gradient
+            gradient = f.compute_jacobian(X, y)  # Get the current gradient
             eta = self.learning_rate_.lr_step(t=idx)
             sol_new = sol - eta * gradient
             delta = np.linalg.norm(sol_new - sol)
@@ -141,7 +141,7 @@ class GradientDescent:
                 sum += sol
                 sol_to_return = sum / idx
 
-            self.callback_(solver=self, weights=f.weights, val=f.compute_output(), grad=gradient, t=idx,
+            self.callback_(solver=self, weights=f.weights, val=f.compute_output(X, y), grad=gradient, t=idx,
                            eta=eta, delta=delta)
             # Check the 2nd stopping condition
             if delta <= self.tol_:

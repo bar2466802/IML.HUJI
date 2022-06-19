@@ -9,6 +9,7 @@ from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
 from IMLearn.base import BaseModule, BaseLR
+from sklearn.metrics import roc_curve, auc
 
 import plotly.graph_objects as go
 
@@ -277,8 +278,57 @@ def fit_logistic_regression():
     X_train, y_train, X_test, y_test = load_data()
 
     # Plotting convergence rate of logistic regression over SA heart disease data
+    alphas = np.linspace(0, 1, num=101)
+    descent_path, values = [], []
 
+    def gd_callback(solver: GradientDescent, weights: np.ndarray, val: np.ndarray, grad: np.ndarray, t: int,
+                    eta: float, delta: float) -> NoReturn:
+        """
+            Plot the descent path of the gradient descent algorithm
 
+            Parameters:
+            -----------
+            - solver: GradientDescent
+                self, the current instance of GradientDescent
+            - weights: ndarray of shape specified by module's weights
+                Current weights of objective
+            - val: ndarray of shape specified by module's compute_output function
+                Value of objective function at current point, over given data X, y
+            - grad:  ndarray of shape specified by module's compute_jacobian function
+                Module's jacobian with respect to the weights and at current point, over given data X,y
+            - t: int
+                Current GD iteration
+            - eta: float
+                Learning rate used at current iteration
+            - delta: float
+                Euclidean norm of w^(t)-w^(t-1)
+        """
+        descent_path.append(weights)
+        values.append(val)
+
+    gd = GradientDescent(learning_rate=FixedLR(base_lr=1e-4), max_iter=int(2e4), callback=gd_callback)
+    data = [go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
+                       name="Random Class Assignment")]
+    scores = []
+    for alpha in alphas:
+        descent_path, values = [], []
+        estimator = LogisticRegression(solver=gd, alpha=alpha)
+        estimator.fit(X_train.to_numpy(), y_train.to_numpy())
+        y_pred_proba = estimator.predict_proba(X_train.to_numpy())
+        fpr, tpr, thresholds = roc_curve(y_train, y_pred_proba)
+        plot = go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
+                          hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}")
+        data.append(plot)
+        score = auc(fpr, tpr)
+        scores.append(score)
+
+    scores = np.array(scores)
+    best_score = scores.max()
+    go.Figure(
+        data=data,
+        layout=go.Layout(title=rf"$\text{{ROC Curve Of Fitted Model - AUC}}={best_score:.6f}$",
+                         xaxis=dict(title=r"$\text{False Positive Rate (FPR)}$"),
+                         yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$"))).show()
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
 
@@ -286,9 +336,9 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     print("compare_fixed_learning_rates")
-    compare_fixed_learning_rates()
+    # compare_fixed_learning_rates()
     print("compare_exponential_decay_rates")
-    compare_exponential_decay_rates()
+    # compare_exponential_decay_rates()
     print("fit_logistic_regression")
     fit_logistic_regression()
     print("fin ex6!")
