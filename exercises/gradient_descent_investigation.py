@@ -8,6 +8,7 @@ from plotly.subplots import make_subplots
 from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
+from IMLearn.base import BaseModule, BaseLR
 
 import plotly.graph_objects as go
 
@@ -60,18 +61,20 @@ def plot_descent_path(module: Type[BaseModule],
                                       title=f"GD Descent Path - {title}"))
 
 
-def get_gd_state_recorder_callback(module_type: Type[BaseModule], init: np.ndarray, etas: Tuple[float]) \
-        -> Tuple[np.ndarray, np.ndarray]:
+def get_gd_state_recorder_callback(module_type: Type[BaseModule], init: np.ndarray, etas: Tuple[float],
+                                   gammas: Tuple[float] = None) \
+        -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Callback generator for the GradientDescent class, recording the objective's value and parameters at each iteration
 
     Return:
     -------
-    values: List[np.ndarray]
-        Recorded objective values
-
     weights: List[np.ndarray]
         Recorded parameters
+    values: List[np.ndarray]
+        Recorded objective values
+    achieved_points: List[np.ndarray]
+        Values returned from GD
     """
     value, values = [], []
     descent_paths, descent_path = [], []
@@ -101,16 +104,41 @@ def get_gd_state_recorder_callback(module_type: Type[BaseModule], init: np.ndarr
         descent_path.append(weights)
         value.append(val)
 
-    for rate in etas:
-        descent_path, value = [], []
+    achieved_points = []
+    for i, rate in enumerate(etas):
+        descent_path, value, = [], []
         module = module_type(weights=init)
-        fixed_lr = FixedLR(base_lr=rate)
-        gd = GradientDescent(learning_rate=fixed_lr, callback=gd_callback)
-        gd.fit(X=None, y=None, f=module)
+        if gammas is None:
+            learning_rate = FixedLR(base_lr=rate)
+        else:
+            gamma = gammas[i]
+            learning_rate = ExponentialLR(base_lr=rate, decay_rate=gamma)
+        gd = GradientDescent(learning_rate=learning_rate, callback=gd_callback)
+        val_achieved = gd.fit(X=None, y=None, f=module)
         descent_paths.append(descent_path)
         values.append(value)
+        achieved_points.append(val_achieved)
 
-    return np.array(descent_paths), np.array(values)
+    return np.array(descent_paths, dtype=object), np.array(values, dtype=object), np.array(achieved_points,
+                                                                                           dtype=object)
+
+
+def print_min(module, module_name, achieved_points, etas, gammas=None):
+    form = "{:.3f}"
+    print("For module " + module_name)
+    # print("points returned from GD = ")
+    # print(str(achieved_points))
+    print("values computed from returned points from GD = ")
+    values_achieved = np.array([module(weights=w).compute_output() for w in achieved_points])
+    print(str(values_achieved))
+    min_loss = values_achieved.min()
+    min_loss_i = int(np.argmin(values_achieved))
+    best_eta = etas[min_loss_i]
+    result = "Lowest loss achieved = " + form.format(min_loss) + ", with eta = " + str(best_eta)
+    if gammas is not None:
+        best_gamma = gammas[min_loss_i]
+        result += " with gamma = " + str(best_gamma)
+    print(result + "\n")
 
 
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
@@ -125,51 +153,91 @@ def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e /
     for i, t in enumerate(modules_titles):
         module_title_arr = []
         for j, eta in enumerate(etas):
-            title = "Module - " + t + ", eta - " + str(eta)
+            title = "FixedLR Module - " + t + ", eta - " + str(eta)
             module_title_arr.append(title)
         titles.append(module_title_arr)
     titles = np.array(titles)
+
     for i, module in enumerate(modules):
-        descent_paths, values = get_gd_state_recorder_callback(module_type=module, init=init, etas=etas)
+        descent_paths, values, achieved_points = get_gd_state_recorder_callback(module_type=module, init=init,
+                                                                                etas=etas)
         for j in range(len(descent_paths)):
             path = descent_paths[j]
             val = values[j]
             title = titles[i][j]
             fig1 = plot_descent_path(module=module, descent_path=path, title=title)
-            fig1.show()
-            fig1.write_image("GD Descent Path " + title + ".png", engine='kaleido', format='png')
+            # fig1.show()  # TODO uncomment
+            fig1.write_image("Gradient Descent Path " + title + ".png", engine='kaleido', format='png')
 
             """
                 3.1.1 Comparing Fixed learning rates - question 3
                 For each of the modules, plot the convergence rate (i.e. the norm as a function of the GD
                 iteration) for all specified learning rates. Explain your results
             """
-            fig2 = go.Figure(go.Scatter(x=np.array(range(len(val))), y=val, mode="markers+lines", marker_color="black"),
-                             layout=go.Layout(title=f"GD Descent Convergence Rate - {title}"))
-            fig2.show()
+            fig2 = go.Figure(go.Scatter(x=np.array(range(len(val))), y=val, mode="markers+lines", marker_color="plum"),
+                             layout=go.Layout(title=f"GD Descent Convergence Rate - {title}", xaxis_title="Iteration",
+                                              yaxis_title="Loss"))
+            fig2.show()  # TODO uncomment
             fig2.write_image("GD Descent Convergence " + title + ".png", engine='kaleido', format='png')
 
-            """
-               What is the lowest loss achieved when minimizing each of the modules? Explain the differences
-            """
-            min_loss = val.min()
-            min_loss_i = np.argmin(val)
-            form = "{:.3f}"
-            print("For " + title)
-            print("Lowest loss achieved = " + form.format(min_loss) + ", in iteration = " + str(min_loss_i))
+        """
+           What is the lowest loss achieved when minimizing each of the modules? Explain the differences
+        """
+        print_min(module=module, module_name=modules_titles[i], etas=etas, achieved_points=achieved_points)
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                     eta: float = .1,
                                     gammas: Tuple[float] = (.9, .95, .99, 1)):
     # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
-    a = 1
+    # and Plot algorithm's convergence for the different values of gamma
+    """
+    3.1.2 Comparing Exponentially Decaying learning rates
+    Plot the convergence rate for all decay rates in a single plot. Explain your results
+    """
+    etas = np.full(shape=len(gammas), fill_value=eta)
+    modules = [L1, L2]
+    modules_titles = ["L1", "L2"]
+    titles = []
+    for i, t in enumerate(modules_titles):
+        module_title_arr = []
+        for j, gamma in enumerate(gammas):
+            title = "ExponentialLR Module - " + t + ", eta - " + str(eta) + ", gamma - " + str(gamma)
+            module_title_arr.append(title)
+        titles.append(module_title_arr)
+    titles = np.array(titles)
 
-    # Plot algorithm's convergence for the different values of gamma
+    for k, module in enumerate(modules):
+        descent_paths, values, achieved_points = get_gd_state_recorder_callback(module_type=module, init=init,
+                                                                                etas=etas, gammas=gammas)
+        title = modules_titles[k] + " - Loss Vs. Iteration - convergence rate for all decay rates"
+        fig = go.Figure(layout=go.Layout(title=f"GD Descent Convergence Rate - {title}", xaxis_title="Iteration",
+                                         yaxis_title="Loss"))
+        plots_colors = ["blue", "red", "green", "pink"]
+        for i in range(len(values)):
+            value = values[i]
+            color = plots_colors[i]
+            gamma = gammas[i]
+            iterations = np.array(range(len(value)))
+            plot = go.Scatter(x=iterations, y=value, mode="markers+lines", marker_color=color, name=str(gamma))
+            fig.add_trace(plot)
+        # fig.show()  # TODO uncomment
+        fig.write_image("Gradient Descent Convergence " + title + ".png", engine='kaleido', format='png', scale=1,
+                        width=1550,
+                        height=1000)
 
+        # Plot descent path for all gammas
+        for j in range(len(descent_paths)):
+            path = np.array(descent_paths[j])
+            title = titles[k][j]
+            fig1 = plot_descent_path(module=module, descent_path=path, title=title)
+            # fig1.show()  # TODO uncomment
+            fig1.write_image("Gradient Descent Path " + title + ".png", engine='kaleido', format='png', scale=1,
+                             width=1550,
+                             height=1000)
 
-    # Plot descent path for gamma=0.95
-
+        print_min(module=module, module_name=modules_titles[k], etas=etas, achieved_points=achieved_points,
+                  gammas=gammas)
 
 
 def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
@@ -209,16 +277,19 @@ def fit_logistic_regression():
     X_train, y_train, X_test, y_test = load_data()
 
     # Plotting convergence rate of logistic regression over SA heart disease data
-    raise NotImplementedError()
+
 
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
-    raise NotImplementedError()
+    r
 
 
 if __name__ == '__main__':
     np.random.seed(0)
+    print("compare_fixed_learning_rates")
     compare_fixed_learning_rates()
+    print("compare_exponential_decay_rates")
     compare_exponential_decay_rates()
-    # fit_logistic_regression()
+    print("fit_logistic_regression")
+    fit_logistic_regression()
     print("fin ex6!")
