@@ -281,7 +281,6 @@ def fit_logistic_regression():
 
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
-    r
 
 
 if __name__ == '__main__':
