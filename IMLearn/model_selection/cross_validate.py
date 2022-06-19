@@ -44,28 +44,42 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    x_folds = np.array_split(X, cv)
-    y_folds = np.array_split(y, cv)
+    ids = np.arange(X.shape[0])
 
-    train_scores = []  # to check if we needed it or not
-    validation_scores = []
-    for k, (x_fold, y_fold) in enumerate(zip(x_folds, y_folds)):
-        x_folds_copy = deepcopy(x_folds)
-        y_folds_copy = deepcopy(y_folds)
-        x_folds_copy.pop(k)
-        data = np.concatenate(x_folds_copy)
-        y_folds_copy.pop(k)
-        labels = np.concatenate(y_folds_copy)
-        estimator.fit(data, labels)
-        # calc train score
-        score = scoring(estimator.predict(data), labels)
-        train_scores.append(score)
-        # calc validation score
-        score = scoring(estimator.predict(x_fold), y_fold)
-        validation_scores.append(score)
+    # Randomly split samples into `cv` folds
+    folds = np.array_split(ids, cv)
 
-    train_scores = np.array(train_scores)
-    validation_scores = np.array(validation_scores)
-    return np.float(np.mean(train_scores)), np.float(np.mean(validation_scores))
+    train_score, validation_score = .0, .0
+    for fold_ids in folds:
+        train_msk = ~np.isin(ids, fold_ids)
+        fit = deepcopy(estimator).fit(X[train_msk], y[train_msk])
+
+        train_score += scoring(y[train_msk], fit.predict(X[train_msk]))
+        validation_score += scoring(y[fold_ids], fit.predict(X[fold_ids]))
+
+    return train_score / cv, validation_score / cv
+    # x_folds = np.array_split(X, cv)
+    # y_folds = np.array_split(y, cv)
+    #
+    # train_scores = []  # to check if we needed it or not
+    # validation_scores = []
+    # for k, (x_fold, y_fold) in enumerate(zip(x_folds, y_folds)):
+    #     x_folds_copy = deepcopy(x_folds)
+    #     y_folds_copy = deepcopy(y_folds)
+    #     x_folds_copy.pop(k)
+    #     data = np.concatenate(x_folds_copy)
+    #     y_folds_copy.pop(k)
+    #     labels = np.concatenate(y_folds_copy)
+    #     estimator.fit(data, labels)
+    #     # calc train score
+    #     score = scoring(estimator.predict(data), labels)
+    #     train_scores.append(score)
+    #     # calc validation score
+    #     score = scoring(estimator.predict(x_fold), y_fold)
+    #     validation_scores.append(score)
+    #
+    # train_scores = np.array(train_scores)
+    # validation_scores = np.array(validation_scores)
+    # return np.float(np.mean(train_scores)), np.float(np.mean(validation_scores))
 
 

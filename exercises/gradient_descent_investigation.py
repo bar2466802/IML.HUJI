@@ -5,6 +5,7 @@ from typing import Tuple, List, Callable, Type, NoReturn
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
 from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
 from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
 from IMLearn.utils import split_train_test
@@ -276,61 +277,74 @@ def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8)
 def fit_logistic_regression():
     # Load and split SA Heard Disease dataset
     X_train, y_train, X_test, y_test = load_data()
-
-    # Plotting convergence rate of logistic regression over SA heart disease data
-    alphas = np.linspace(0, 1, num=101)
-    descent_path, values = [], []
-
-    def gd_callback(solver: GradientDescent, weights: np.ndarray, val: np.ndarray, grad: np.ndarray, t: int,
-                    eta: float, delta: float) -> NoReturn:
-        """
-            Plot the descent path of the gradient descent algorithm
-
-            Parameters:
-            -----------
-            - solver: GradientDescent
-                self, the current instance of GradientDescent
-            - weights: ndarray of shape specified by module's weights
-                Current weights of objective
-            - val: ndarray of shape specified by module's compute_output function
-                Value of objective function at current point, over given data X, y
-            - grad:  ndarray of shape specified by module's compute_jacobian function
-                Module's jacobian with respect to the weights and at current point, over given data X,y
-            - t: int
-                Current GD iteration
-            - eta: float
-                Learning rate used at current iteration
-            - delta: float
-                Euclidean norm of w^(t)-w^(t-1)
-        """
-        descent_path.append(weights)
-        values.append(val)
-
-    gd = GradientDescent(learning_rate=FixedLR(base_lr=1e-4), max_iter=int(2e4), callback=gd_callback)
-    data = [go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
+    """
+    3.2 Minimizing Regularized Logistic Regression - Q8
+    Using your implementation, fit a logistic regression model over the data. Use the predict_proba
+    to plot an ROC curve.
+    """
+    gd = GradientDescent(learning_rate=FixedLR(base_lr=1e-4), max_iter=int(2e4))
+    estimator = LogisticRegression(solver=gd)
+    estimator.fit(X_train.to_numpy(), y_train.to_numpy())
+    y_pred_proba = estimator.predict_proba(X_train.to_numpy())
+    fpr, tpr, thresholds = roc_curve(y_train, y_pred_proba)
+    score = auc(fpr, tpr)
+    data = [go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
+                       hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}"),
+            go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
                        name="Random Class Assignment")]
-    scores = []
-    for alpha in alphas:
-        descent_path, values = [], []
-        estimator = LogisticRegression(solver=gd, alpha=alpha)
-        estimator.fit(X_train.to_numpy(), y_train.to_numpy())
-        y_pred_proba = estimator.predict_proba(X_train.to_numpy())
-        fpr, tpr, thresholds = roc_curve(y_train, y_pred_proba)
-        plot = go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
-                          hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}")
-        data.append(plot)
-        score = auc(fpr, tpr)
-        scores.append(score)
-
-    scores = np.array(scores)
-    best_score = scores.max()
-    go.Figure(
+    fig = go.Figure(
         data=data,
-        layout=go.Layout(title=rf"$\text{{ROC Curve Of Fitted Model - AUC}}={best_score:.6f}$",
+        layout=go.Layout(title=rf"$\text{{ROC Curve Of Fitted Model - AUC}}={score:.6f}$",
                          xaxis=dict(title=r"$\text{False Positive Rate (FPR)}$"),
-                         yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$"))).show()
+                         yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$")))
+    fig.show()
+    fig.write_image("Q8 ROC.png", engine='kaleido', format='png', scale=1, width=1550, height=1000)
+    """
+    Q9 - Which value of a achieves the optimal ROC value
+    Using this value of alpha what is the model’s test error?
+    """
+    max_index = np.argmax(tpr - fpr)
+    best_alpha = thresholds[max_index]
+    print("Question 9:")
+    print("The best alpha is which achieved the optimal ROC value: " + str(round(best_alpha, 3)))
+    print("Optimal value: " + str(round(np.max(tpr - fpr), 3)))
+    best_estimator = LogisticRegression(solver=gd, alpha=best_alpha)
+    best_estimator.fit(X_train.to_numpy(), y_train.to_numpy())
+    test_error = estimator.loss(X_test.to_numpy(), y_test.to_numpy())
+    print("Using the best alpha the test error is: " + str(round(test_error, 3)))
+
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
+    def cv_logistic_regression(penalty: str, lambdas: np.ndarray):
+        from IMLearn.model_selection import cross_validate
+        from IMLearn.metrics import misclassification_error
+        scores = []
+        for lam in lambdas:
+            estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=penalty, lam=lam)
+            train_score, validation_score = cross_validate(estimator=estimator, X=X_train.to_numpy(),
+                                                           y=y_train.to_numpy(),
+                                                           scoring=misclassification_error)
+            scores.append({'train_score': train_score, 'validation_score': validation_score, 'lam': lam})
+
+        scores_df = pd.DataFrame(scores)
+        return scores_df
+
+    for module_name, q_name in zip(["l1", "l2"], ["Q9", "Q10"]):
+        scores_df = cv_logistic_regression(module_name, np.linspace(1e-4, 5))
+        plt.title("Average training and validation errors Vs. lam")
+        plt.xlabel("lam values")
+        plt.ylabel("Average errors")
+        plt.plot(scores_df['lam'], scores_df['train_score'], c='b', label='Average train error')
+        plt.plot(scores_df['lam'], scores_df['validation_score'], c='r', label='Average validation error')
+        print(q_name + ": " + "for module " + module_name)
+        best_model = scores_df[scores_df['validation_score'] == scores_df['validation_score'].min()]
+        best_lam = int(best_model['lam'])
+        print('Best lam is: ' + str(best_lam))
+
+        estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=module_name, lam=best_lam)
+        estimator.fit(X_train.to_numpy(), y_train.to_numpy())
+        test_error = estimator.loss(X_test.to_numpy(), y_test.to_numpy())
+        print("Using the best lam the test error is: " + str(round(test_error, 3)))
 
 
 if __name__ == '__main__':
