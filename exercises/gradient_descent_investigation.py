@@ -320,6 +320,8 @@ def fit_logistic_regression():
         from IMLearn.metrics import misclassification_error
         scores = []
         for lam in lambdas:
+            print(lam)
+            gd = GradientDescent(learning_rate=FixedLR(base_lr=1e-4), max_iter=int(2e4))
             estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=penalty, lam=lam)
             train_score, validation_score = cross_validate(estimator=estimator, X=X_train.to_numpy(),
                                                            y=y_train.to_numpy(),
@@ -329,16 +331,19 @@ def fit_logistic_regression():
         scores_df = pd.DataFrame(scores)
         return scores_df
 
+    lambdas = np.array([0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1])
+
     for module_name, q_name in zip(["l1", "l2"], ["Q9", "Q10"]):
-        scores_df = cv_logistic_regression(module_name, np.linspace(1e-4, 5))
+        scores_df = cv_logistic_regression(module_name, lambdas)
         plt.title("Average training and validation errors Vs. lam")
         plt.xlabel("lam values")
         plt.ylabel("Average errors")
         plt.plot(scores_df['lam'], scores_df['train_score'], c='b', label='Average train error')
         plt.plot(scores_df['lam'], scores_df['validation_score'], c='r', label='Average validation error')
+        plt.show()
         print(q_name + ": " + "for module " + module_name)
         best_model = scores_df[scores_df['validation_score'] == scores_df['validation_score'].min()]
-        best_lam = int(best_model['lam'])
+        best_lam = float(best_model['lam'])
         print('Best lam is: ' + str(best_lam))
 
         estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=module_name, lam=best_lam)

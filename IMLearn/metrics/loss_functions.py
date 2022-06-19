@@ -45,10 +45,8 @@ def misclassification_error(y_true: np.ndarray, y_pred: np.ndarray, normalize: b
     """
     # y_diff = y_true * y_pred
     # error = len(y_diff[y_diff < 0])
-    error = sum(1 for y1, y2 in zip(y_true, y_pred) if y1 != y2)
-    if normalize:
-        error = error / len(y_true)
-    return error
+    score = np.sum(y_true != y_pred)
+    return score / len(y_true) if normalize else score
 
 
 def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
