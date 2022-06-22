@@ -168,7 +168,7 @@ def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e /
             val = values[j]
             title = titles[i][j]
             fig1 = plot_descent_path(module=module, descent_path=path, title=title)
-            # fig1.show()  # TODO uncomment
+            fig1.show()
             fig1.write_image("Gradient Descent Path " + title + ".png", engine='kaleido', format='png')
 
             """
@@ -179,7 +179,7 @@ def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e /
             fig2 = go.Figure(go.Scatter(x=np.array(range(len(val))), y=val, mode="markers+lines", marker_color="plum"),
                              layout=go.Layout(title=f"GD Descent Convergence Rate - {title}", xaxis_title="Iteration",
                                               yaxis_title="Loss"))
-            fig2.show()  # TODO uncomment
+            fig2.show()
             fig2.write_image("GD Descent Convergence " + title + ".png", engine='kaleido', format='png')
 
         """
@@ -223,7 +223,7 @@ def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.
             iterations = np.array(range(len(value)))
             plot = go.Scatter(x=iterations, y=value, mode="markers+lines", marker_color=color, name=str(gamma))
             fig.add_trace(plot)
-        # fig.show()  # TODO uncomment
+        fig.show()
         fig.write_image("Gradient Descent Convergence " + title + ".png", engine='kaleido', format='png', scale=1,
                         width=1550,
                         height=1000)
@@ -233,7 +233,7 @@ def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.
             path = np.array(descent_paths[j])
             title = titles[k][j]
             fig1 = plot_descent_path(module=module, descent_path=path, title=title)
-            # fig1.show()  # TODO uncomment
+            fig1.show()
             fig1.write_image("Gradient Descent Path " + title + ".png", engine='kaleido', format='png', scale=1,
                              width=1550,
                              height=1000)
@@ -346,7 +346,7 @@ def fit_logistic_regression():
         best_lam = float(best_model['lam'])
         print('Best lam is: ' + str(best_lam))
 
-        estimator = LogisticRegression(solver=gd, alpha=best_alpha, penalty=module_name, lam=best_lam)
+        estimator = LogisticRegression(solver=gd, alpha=0.5, penalty=module_name, lam=best_lam)
         estimator.fit(X_train.to_numpy(), y_train.to_numpy())
         test_error = estimator.loss(X_test.to_numpy(), y_test.to_numpy())
         print("Using the best lam the test error is: " + str(round(test_error, 3)))
@@ -355,9 +355,9 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     print("compare_fixed_learning_rates")
-    # compare_fixed_learning_rates()
+    compare_fixed_learning_rates()
     print("compare_exponential_decay_rates")
-    # compare_exponential_decay_rates()
+    compare_exponential_decay_rates()
     print("fit_logistic_regression")
     fit_logistic_regression()
     print("fin ex6!")

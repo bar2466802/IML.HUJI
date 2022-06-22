@@ -136,7 +136,7 @@ class LogisticModule(BaseModule):
         """
 
         # Represents the function: f(w) = - (1/m) sum_i^m[y*<x_i,w> - log(1+exp(<x_i,w>))]
-        m = self.weights.shape[0]
+        m = X.shape[0]
         matrix = X @ self.weights
         a = y * matrix - np.log(1 + np.exp(matrix))
         return -(1 / m) * np.sum(a)
@@ -158,7 +158,7 @@ class LogisticModule(BaseModule):
         output: ndarray of shape (n_features,)
             Derivative of function with respect to self.weights at point self.weights
         """
-        m = self.weights.shape[0]
+        m = X.shape[0]
         matrix = X @ self.weights
         sigmoid = 1 / (1 + np.exp(-matrix))
         diff = y - sigmoid
