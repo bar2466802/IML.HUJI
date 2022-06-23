@@ -1,3 +1,10 @@
+#################################################################
+# FILE : learning_rate.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 6
+# DESCRIPTION: Convex Optimization, Gradient Descent.
+#################################################################
+
 import numpy as np
 
 from IMLearn.base import BaseModule, BaseLR

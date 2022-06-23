@@ -1,3 +1,10 @@
+#################################################################
+# FILE : gradient_descent_investigation.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 6
+# DESCRIPTION: Convex Optimization, Gradient Descent.
+#################################################################
+
 import numpy as np
 import pandas as pd
 from typing import Tuple, List, Callable, Type, NoReturn
@@ -128,8 +135,6 @@ def get_gd_state_recorder_callback(module_type: Type[BaseModule], init: np.ndarr
 def print_min(module, module_name, achieved_points, etas, gammas=None):
     form = "{:.3f}"
     print("For module " + module_name)
-    # print("points returned from GD = ")
-    # print(str(achieved_points))
     print("values computed from returned points from GD = ")
     values_achieved = np.array([module(weights=w).compute_output() for w in achieved_points])
     print(str(values_achieved))

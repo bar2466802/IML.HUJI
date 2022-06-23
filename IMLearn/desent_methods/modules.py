@@ -1,3 +1,10 @@
+#################################################################
+# FILE : modules.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 6
+# DESCRIPTION: Convex Optimization, Gradient Descent.
+#################################################################
+
 import numpy as np
 from IMLearn import BaseModule
 from copy import deepcopy

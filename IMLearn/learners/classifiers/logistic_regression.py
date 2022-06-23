@@ -1,3 +1,10 @@
+#################################################################
+# FILE : logistic_regression.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 6
+# DESCRIPTION: Convex Optimization, Gradient Descent.
+#################################################################
+
 from typing import NoReturn
 import numpy as np
 from IMLearn import BaseEstimator

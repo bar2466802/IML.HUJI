@@ -1,3 +1,10 @@
+#################################################################
+# FILE : gradient_descent.py
+# WRITER : Bar Melinarskiy
+# EXERCISE : Intro to Machine Learning - 67577 - Exercise 6
+# DESCRIPTION: Convex Optimization, Gradient Descent.
+#################################################################
+
 from __future__ import annotations
 from typing import Callable, NoReturn
 import numpy as np
